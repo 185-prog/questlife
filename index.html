@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f8fc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>QuestLife</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow" id="modeLabel">通常日</div>
+      <h1>QuestLife <small class="version">v6.9</small></h1>
+    </div>
+    <div class="header-status">
+      <div class="streak">連続 <b id="streakCount">0</b>日</div>
+      <div class="deadline" id="deadlineLabel"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="today" class="tab active home-screen">
+      <div class="home-date-row">
+        <div>
+          <div class="home-overline" id="homeDateLabel">TODAY</div>
+          <h2 class="home-title" id="todayHeading">今日を整える</h2>
+        </div>
+        <div class="home-streak-pill">連続 <b id="homeStreakCount">0</b>日</div>
+      </div>
+
+      <button class="guide-card" id="openGuide" type="button" aria-haspopup="dialog" aria-controls="guideDialog">
+        <div class="guide-copy">
+          <span class="guide-label">今日の進捗</span>
+          <strong class="guide-percent" id="dayPercent">0%</strong>
+          <div class="guide-progress" aria-hidden="true"><span id="guideProgressBar"></span></div>
+          <p id="todaySummary">まず1つだけ終わらせましょう。</p>
+        </div>
+        <div class="guide-avatar" aria-hidden="true">
+          <div class="avatar-hair"></div>
+          <div class="avatar-face"></div>
+          <div class="avatar-body"></div>
+        </div>
+        <span class="guide-chevron" aria-hidden="true">›</span>
+      </button>
+      <div id="dayRing" hidden></div>
+
+      <div class="home-section">
+        <div class="home-section-head">
+          <h2>今日のタスク</h2>
+          <span id="taskProgressText">0/0</span>
+        </div>
+        <div class="task-surface" id="todayTasks"></div>
+      </div>
+
+      <div class="home-section weight-home-section">
+        <div class="home-section-head">
+          <div>
+            <h2>体重</h2>
+            
+          </div>
+          <div class="weight-summary"><strong id="homeWeightLatest">未記録</strong><span id="homeWeightDelta">前回比 —</span><span id="homeWeightGoal">目標まで —</span></div>
+        </div>
+        <button class="weight-chart-button jump-tab" data-target="record" type="button" aria-label="体重記録を詳しく見る">
+          <canvas id="homeWeightChart" width="600" height="180"></canvas>
+          <span class="chart-link">詳しく見る ›</span>
+        </button>
+      </div>
+
+      <div id="todayWorkoutCard" hidden>
+        <span id="todayWorkoutBadge"></span><p id="todayWorkoutSummary"></p>
+      </div>
+      <div class="finish-day-wrap"><button id="finishDay" class="finish-day-button" type="button">今日を終了する</button></div>
+    </section>
+
+    <section id="workout" class="tab">
+      <div class="page-heading"><h2>運動</h2></div>
+      <div class="card workout-recommend-card">
+        <div class="recommend-head"><div><span class="recommend-kicker">今日のおすすめ</span><h2 id="recommendTitle">今日の運動</h2></div><span id="recommendIntensity" class="recommend-badge">標準</span></div>
+        <div class="recommend-metrics"><strong id="recommendMinutes">30分</strong><span id="recommendFocus">全身をバランスよく</span></div>
+        <div class="ai-comment"><span class="ai-comment-icon" aria-hidden="true">✦</span><p id="aiWorkoutComment"></p></div>
+      </div>
+      <div class="card" id="checkinCard">
+        <div class="section-title"><h2>今日の状態</h2><span id="dayTheme">自動調整</span></div>
+        <div class="segmented-grid">
+          <label>体調<select id="condition"><option>良い</option><option selected>普通</option><option>悪い</option></select></label>
+          <label>やる気<select id="motivation"><option>高い</option><option selected>普通</option><option>低い</option></select></label>
+          <label>筋肉痛<select id="soreness"><option selected>なし</option><option>上半身</option><option>下半身</option><option>全身</option></select></label>
+          <label>腰の状態<select id="back"><option selected>痛くない</option><option>少し違和感</option><option>痛みがある</option></select></label>
+        </div>
+        <label class="full-label">運動時間<select id="duration"><option value="5">5分</option><option value="10">10分</option><option value="20">20分</option><option value="30" selected>30分</option><option value="40">40分</option><option value="60">60分</option></select></label>
+        <button class="primary" id="generateWorkout">今日のメニューを作る</button>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>今日のメニュー</h2><span id="workoutStatus">未生成</span></div>
+        <div id="workoutPlan" class="stack"></div>
+        <label>運動後のきつさ<select id="workoutRpe"><option value="2">かなり楽</option><option value="4">やや楽</option><option value="6" selected>ちょうどよい</option><option value="8">かなりきつい</option><option value="10">限界に近い</option></select></label>
+        <button id="completeWorkout" class="primary" disabled>運動を完了した</button>
+        <p class="safety-note">鋭い痛み、しびれ、痛みの悪化がある場合は中止してください。</p>
+      </div>
+    </section>
+
+    <section id="record" class="tab record-screen">
+      <div class="page-heading"><h2>記録</h2></div>
+
+      <div class="card record-weight-card">
+        <div class="section-title record-weight-head">
+          <div><h2>体重の推移</h2></div>
+          <div class="record-weight-summary"><strong id="recordWeightLatest">未記録</strong><span id="recordWeightDelta">前回比 —</span><span id="recordWeightGoal">目標まで —</span></div>
+        </div>
+        <div class="period-tabs" role="group" aria-label="体重グラフの期間">
+          <button type="button" class="period-tab active" data-days="7">7日</button>
+          <button type="button" class="period-tab" data-days="30">30日</button>
+          <button type="button" class="period-tab" data-days="90">90日</button>
+          <button type="button" class="period-tab" data-days="all">全期間</button>
+        </div>
+        <canvas id="weightChart" width="600" height="300"></canvas>
+        <form id="weightForm" class="record-weight-form">
+          <label><span>今日の体重</span><input id="weightInput" type="number" step="0.1" min="30" max="250" placeholder="kg" required /></label>
+          <button class="primary" type="submit">記録する</button>
+        </form>
+      </div>
+
+      <div class="card weekly-plan-card">
+        <div class="section-title"><div><h2>7日間</h2></div><span id="historyRange"></span></div>
+        <div id="historyList" class="weekly-plan-strip compact-plan"></div>
+        <div class="weekly-plan-legend"><span>🔥 高負荷</span><span>💪 中負荷</span><span>🌿 回復</span><span>✦ チャレンジ</span><span>🌙 夜勤</span></div>
+        <div id="planDayDetail" class="plan-day-detail muted"></div>
+      </div>
+
+      <div class="stats-grid record-stats">
+        <div class="stat-card"><span>今週のタスク達成率</span><b id="weeklyTaskRate">0%</b></div>
+        <div class="stat-card"><span>今週の運動</span><b id="weeklyWorkoutCount">0日</b></div>
+        <div class="stat-card"><span>体重記録</span><b id="weightRecordCount">0回</b></div>
+      </div>
+
+      <div class="card calendar-card">
+        <div class="section-title"><div><h2>カレンダー</h2></div><button id="openSchedule" class="calendar-add" type="button" aria-label="予定を追加">＋</button></div>
+        <div class="calendar-toolbar"><button id="calendarPrev" class="icon-button" type="button">‹</button><strong id="calendarMonthLabel"></strong><button id="calendarNext" class="icon-button" type="button">›</button></div>
+        <div class="calendar-weekdays"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+        <div class="calendar-legend"><span class="legend-status full">全達成</span><span class="legend-status partial">一部達成</span><span class="legend-status missed">未達成</span><span>🌙 夜勤</span><span>🌴 バケーション</span></div>
+        <div id="calendarDayDetail" class="calendar-day-detail muted"></div>
+      </div>
+
+      <div class="card workout-history-card">
+        <div class="section-title"><div><h2>運動履歴</h2></div></div>
+        <div id="workoutHistoryList" class="workout-history-list"></div>
+      </div>
+
+      <div class="card food-review-card compact-food-card">
+        <div class="section-title"><div><h2>食生活</h2></div><span id="foodWeekLabel"></span></div>
+        <div class="food-review-summary">
+          <div><span>今週</span><strong id="foodCurrentSummary">未入力</strong></div>
+          <div><span>先週</span><strong id="foodPreviousSummary">未入力</strong></div>
+        </div>
+        <label class="food-select-label"><span>今週の振り返り</span><select id="weeklyFoodCheck"><option value="none">まだ記録しない</option><option value="normal">普通</option><option value="overeat">食べ過ぎ</option><option value="restrained">抑えた</option></select></label>
+        <div class="food-review-actions"><button id="saveWeeklyFood" class="primary" type="button">今週を保存</button><button id="openFoodHistory" class="secondary" type="button">履歴を見る</button></div>
+        <p id="weeklyFoodStatus" class="muted"></p>
+      </div>
+    </section>
+
+    <section id="settings" class="tab settings-home">
+      <div class="page-heading"><h2>設定</h2></div>
+      <div class="settings-menu settings-list-menu">
+        <button class="settings-tile" data-settings-dialog="exerciseSettingsDialog"><span class="settings-icon exercise-icon">●</span><span><b>運動設定</b></span><i>›</i></button>
+        <button class="settings-tile" data-settings-dialog="taskSettingsDialog"><span class="settings-icon task-icon">✓</span><span><b>毎日のタスク</b></span><i>›</i></button>
+        <button class="settings-tile" data-settings-dialog="notificationSettingsDialog"><span class="settings-icon notification-icon">●</span><span><b>通知設定</b></span><i>›</i></button>
+        <button class="settings-tile" data-settings-dialog="dataSettingsDialog"><span class="settings-icon data-icon">↕</span><span><b>データ管理</b></span><i>›</i></button>
+        <button class="settings-tile" data-settings-dialog="displaySettingsDialog"><span class="settings-icon display-icon">◐</span><span><b>表示設定</b></span><i>›</i></button>
+        <button class="settings-tile" data-settings-dialog="developerSettingsDialog"><span class="settings-icon other-icon">•••</span><span><b>その他</b></span><i>›</i></button>
+      </div>
+      
+    </section>
+
+    <section id="guild" hidden><div id="inventory"></div><div id="dangerList"></div><div id="baseVisual"></div><div id="baseName"></div><div id="partyVisual"></div></section>
+    <span id="battleChance" hidden></span><span id="battlePreview" hidden></span>
+    <span id="level" hidden></span><span id="xp" hidden></span><span id="xpNext" hidden></span><span id="xpBar" hidden></span><span id="avatar" hidden></span><span id="heroName" hidden></span>
+  </main>
+
+  <nav class="bottom-nav" aria-label="メインメニュー">
+    <button data-tab="today" class="active"><span>⌂</span>今日</button>
+    <button data-tab="workout"><span>◎</span>運動</button>
+    <button data-tab="record"><span>▥</span>記録</button>
+    <button data-tab="settings"><span>⚙</span>設定</button>
+  </nav>
+
+  <dialog id="taskSettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>毎日のタスク</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    
+    <form id="taskForm" class="stack"><label>タスク名<input id="taskName" maxlength="30" placeholder="例：Pythonを15分勉強する" required></label><label>タイマー（分）<input id="taskMinutes" type="number" min="0" max="180" value="0"></label><button class="primary" type="submit">タスクを追加</button></form>
+    <div class="section-title"><h3>登録済み</h3><span id="taskCountLabel">0/5</span></div><div id="taskEditor" class="settings-list"></div>
+  </dialog>
+
+  <dialog id="exerciseSettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>運動設定</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <div class="grid2"><label>現在体重<input id="currentWeight" type="number" step="0.1"></label><label>目標体重<input id="goalWeight" type="number" step="0.1"></label><label>目標日<input id="goalDate" type="date"></label><label>最大時間<select id="maxWorkoutMinutes"><option>30分</option><option>45分</option><option selected>60分</option></select></label></div>
+    <button id="saveGoals" class="primary">目標を保存</button>
+    <h3>持っている器具</h3><div class="equipment-grid"><label class="check-card"><input type="checkbox" name="equipment" value="mat">ヨガマット</label><label class="check-card"><input type="checkbox" name="equipment" value="dumbbell">ダンベル</label><label class="check-card"><input type="checkbox" name="equipment" value="band">トレーニングチューブ</label><label class="check-card"><input type="checkbox" name="equipment" value="pullup">懸垂バー</label><label class="check-card"><input type="checkbox" name="equipment" value="bike">エアロバイク</label><label class="check-card"><input type="checkbox" name="equipment" value="kettlebell">ケトルベル</label></div><button id="saveEquipment" class="primary">器具を保存</button><p id="equipmentStatus" class="muted"></p>
+  </dialog>
+
+  <dialog id="notificationSettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>通知</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <div class="grid2"><label>朝の通知<input id="morningTime" type="time" value="09:00"></label><label>夜の通知<input id="nightTime" type="time" value="21:00"></label></div><label class="toggle-row"><input id="notificationsEnabled" type="checkbox">通知を有効にする</label><div class="row"><button id="saveNotifications" class="primary">保存</button><button id="testNotification" class="secondary">テスト通知</button></div><p id="notificationStatus" class="muted"></p>
+  </dialog>
+
+  <dialog id="dataSettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>データ</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <div class="stack"><button id="exportData" class="secondary">バックアップを書き出す</button><button id="importDataButton" class="secondary">バックアップを読み込む</button></div><input id="importDataFile" type="file" accept="application/json" hidden><p id="backupStatus" class="muted"></p>
+  </dialog>
+
+  <dialog id="displaySettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>表示</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <label class="toggle-row"><input id="reduceMotion" type="checkbox">アニメーションを減らす</label><label class="toggle-row"><input id="compactMode" type="checkbox">表示を少しコンパクトにする</label>
+  </dialog>
+
+  <dialog id="developerSettingsDialog" class="settings-dialog">
+    <div class="settings-dialog-head"><div><span>設定</span><h2>その他</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <h3>iPhoneへの追加</h3><ol class="install-steps"><li>SafariでQuestLifeを開く</li><li>共有ボタンを押す</li><li>「ホーム画面に追加」を選ぶ</li></ol>
+  </dialog>
+
+  <dialog id="scheduleDialog" class="settings-dialog schedule-dialog">
+    <div class="settings-dialog-head"><div><span>カレンダー</span><h2 id="scheduleDialogTitle">予定を追加</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
+    <div class="schedule-tabs"><button class="schedule-tab active" data-schedule-tab="night">夜勤</button><button class="schedule-tab" data-schedule-tab="vacation">バケーション</button></div>
+    <div id="nightSchedulePanel" class="schedule-panel active"><div class="grid2"><label>夜勤日<input id="nightDate" type="date"></label><label>開始<input id="nightStart" type="time" value="22:00"></label><label>終了<input id="nightEnd" type="time" value="07:00"></label><label>翌日の締切<input id="nightDeadline" type="time" value="12:00"></label></div><button id="addNight" class="primary">夜勤を登録</button></div>
+    <div id="vacationSchedulePanel" class="schedule-panel"><div class="grid2"><label>旅行開始<input id="vacStart" type="date"></label><label>旅行終了<input id="vacEnd" type="date"></label></div><button id="saveVacation" class="primary">バケーションを登録</button></div>
+  </dialog>
+
+
+  <dialog id="foodHistoryDialog" class="settings-dialog food-history-dialog">
+    <div class="settings-dialog-head"><div><span>記録</span><h2>食生活の履歴</h2></div><button class="dialog-close close-food-history" type="button">×</button></div>
+    
+    <div id="foodHistoryList" class="food-history-list"></div>
+    <div id="foodHistoryEditor" class="food-history-editor" hidden>
+      <h3 id="foodHistoryEditorTitle"></h3>
+      <label><span>振り返り</span><select id="foodHistoryEditValue"><option value="normal">普通</option><option value="overeat">食べ過ぎ</option><option value="restrained">抑えた</option></select></label>
+      <div class="food-ai-comment"><span>AIコメント</span><p id="foodHistoryAiComment"></p></div>
+      <button id="saveFoodHistoryEdit" class="primary" type="button">この週を更新</button>
+    </div>
+  </dialog>
+
+  <dialog id="guideDialog" class="guide-dialog">
+    <button id="closeGuide" class="dialog-close" type="button" aria-label="閉じる">×</button>
+    <div class="guide-dialog-avatar" aria-hidden="true">
+      <div class="avatar-hair"></div><div class="avatar-face"></div><div class="avatar-body"></div>
+    </div>
+    <div class="guide-dialog-copy">
+      <span class="guide-dialog-kicker">QUESTLIFE GUIDE</span>
+      <h2>今日の案内</h2>
+      
+    </div>
+    <div class="guide-actions">
+      <button class="guide-action jump-tab" data-target="workout" type="button"><span>今日の運動</span><b>メニューを確認 ›</b></button>
+      <button class="guide-action" id="guideFinishDay" type="button"><b>今日を終了 ›</b></button>
+      <button class="guide-action is-future" type="button" disabled><span>今日の気配</span><b>受付嬢実装後に解放</b></button>
+    </div>
+  </dialog>
+
+  <dialog id="resultDialog">
+    <div class="result-visual" id="resultVisual">✓</div>
+    <h2 id="resultTitle">今日の結果</h2>
+    <div id="resultBody"></div>
+    <button id="closeResult" class="primary">閉じる</button>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
