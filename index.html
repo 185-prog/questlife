@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v6.9</small></h1>
+      <h1>QuestLife <small class="version">v7.6</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -226,8 +226,8 @@
   <dialog id="scheduleDialog" class="settings-dialog schedule-dialog">
     <div class="settings-dialog-head"><div><span>カレンダー</span><h2 id="scheduleDialogTitle">予定を追加</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
     <div class="schedule-tabs"><button class="schedule-tab active" data-schedule-tab="night">夜勤</button><button class="schedule-tab" data-schedule-tab="vacation">バケーション</button></div>
-    <div id="nightSchedulePanel" class="schedule-panel active"><div class="grid2"><label>夜勤日<input id="nightDate" type="date"></label><label>開始<input id="nightStart" type="time" value="22:00"></label><label>終了<input id="nightEnd" type="time" value="07:00"></label><label>翌日の締切<input id="nightDeadline" type="time" value="12:00"></label></div><button id="addNight" class="primary">夜勤を登録</button></div>
-    <div id="vacationSchedulePanel" class="schedule-panel"><div class="grid2"><label>旅行開始<input id="vacStart" type="date"></label><label>旅行終了<input id="vacEnd" type="date"></label></div><button id="saveVacation" class="primary">バケーションを登録</button></div>
+    <div id="nightSchedulePanel" class="schedule-panel active"><div class="grid2"><label>夜勤日<input id="nightDate" type="date"></label><label>開始<input id="nightStart" type="time" value="22:00"></label><label>終了<input id="nightEnd" type="time" value="07:00"></label><label>翌日の締切<input id="nightDeadline" type="time" value="12:00"></label></div><div class="stack"><button id="addNight" class="primary">夜勤を登録</button><button id="deleteNight" class="danger" type="button" hidden>この夜勤を取り消す</button></div></div>
+    <div id="vacationSchedulePanel" class="schedule-panel"><div class="grid2"><label>旅行開始<input id="vacStart" type="date"></label><label>旅行終了<input id="vacEnd" type="date"></label></div><div class="stack"><button id="saveVacation" class="primary">バケーションを登録</button><button id="deleteVacation" class="danger" type="button" hidden>このバケーションを取り消す</button></div></div>
   </dialog>
 
 

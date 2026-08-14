@@ -9,7 +9,7 @@ const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split(
 
 const defaults={version:8,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,streak:0,inventory:['旅人の服','ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 let loaded={};try{loaded=JSON.parse(localStorage.getItem('questlife')||'{}')}catch{}
-let state=Object.assign({},defaults,loaded,{version:9});
+let state=Object.assign({},defaults,loaded,{version:10});
 state.equipment??=['mat','dumbbell'];
 // v6.9: old food labels are migrated to the final three choices.
 for(const k of Object.keys(state.weeklyFood||{})){if(state.weeklyFood[k]==='good')state.weeklyFood[k]='restrained';if(state.weeklyFood[k]==='over')state.weeklyFood[k]='overeat';}
@@ -419,7 +419,25 @@ renderAll();
     renderCalendarDetail(selectedCalendarDate)
   }
   function renderCalendarDetail(k){const box=$('#calendarDayDetail');if(!box)return;const l=state.logs[k],done=l?state.tasks.filter(t=>l.tasks?.[t.id]).length:0;const weight=[...state.weights].reverse().find(w=>w.date===k);const extras=[];const n=nightForKey(k);if(n)extras.push(`夜勤 ${n.start}〜翌${n.end}（締切 ${n.deadline}）`);if(isVacationKey(k))extras.push('バケーション');box.innerHTML=`<b>${k.replaceAll('-','/')}</b><br>タスク ${done}/${state.tasks.length}・運動 ${l?.workout?'完了':'未完了'}${weight?`・体重 ${weight.value}kg`:''}${extras.length?`<br>${extras.join(' / ')}`:''}`}
-  function openSchedule(date=selectedCalendarDate){const d=$('#scheduleDialog');if(!d)return;$('#nightDate').value=date;$('#vacStart').value=date;$('#vacEnd').value=date;$('#scheduleDialogTitle').textContent=`${date.replaceAll('-','/')} の予定`;d.showModal()}
+  function openSchedule(date=selectedCalendarDate){
+    const d=$('#scheduleDialog');if(!d)return;
+    const existingNight=nightForKey(date);
+    $('#nightDate').value=date;
+    $('#nightStart').value=existingNight?.start||'22:00';
+    $('#nightEnd').value=existingNight?.end||'07:00';
+    $('#nightDeadline').value=existingNight?.deadline||'12:00';
+    $('#addNight').textContent=existingNight?'夜勤を更新':'夜勤を登録';
+    const deleteNight=$('#deleteNight');if(deleteNight)deleteNight.hidden=!existingNight;
+
+    const existingVacation=isVacationKey(date)?state.vacation:null;
+    $('#vacStart').value=existingVacation?.start||date;
+    $('#vacEnd').value=existingVacation?.end||date;
+    $('#saveVacation').textContent=existingVacation?'バケーションを更新':'バケーションを登録';
+    const deleteVacation=$('#deleteVacation');if(deleteVacation)deleteVacation.hidden=!existingVacation;
+
+    $('#scheduleDialogTitle').textContent=`${date.replaceAll('-','/')} の予定`;
+    d.showModal()
+  }
   $('#calendarPrev')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar()});
   $('#calendarNext')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar()});
   $('#openSchedule')?.addEventListener('click',()=>openSchedule());
@@ -430,6 +448,23 @@ renderAll();
   const oldRenderAll=renderAll; renderAll=function(){oldRenderAll();renderCalendar()};
   const oldAddNight=$('#addNight')?.onclick;if($('#addNight'))$('#addNight').onclick=()=>{oldAddNight?.();renderCalendar();$('#scheduleDialog')?.close()};
   const oldSaveVacation=$('#saveVacation')?.onclick;if($('#saveVacation'))$('#saveVacation').onclick=()=>{oldSaveVacation?.();renderCalendar();$('#scheduleDialog')?.close()};
+  if($('#deleteNight'))$('#deleteNight').onclick=()=>{
+    const date=$('#nightDate').value;
+    const existing=nightForKey(date);
+    if(!existing)return;
+    if(!confirm(`${date.replaceAll('-','/')} の夜勤登録を取り消しますか？`))return;
+    state.nightShifts=state.nightShifts.filter(n=>n.date!==date);
+    addEvent('schedule',`夜勤登録を取り消し（${date}）`,date);
+    save(false);renderCalendar();renderAll();$('#scheduleDialog')?.close();
+  };
+  if($('#deleteVacation'))$('#deleteVacation').onclick=()=>{
+    if(!state.vacation)return;
+    const v={...state.vacation};
+    if(!confirm(`${v.start.replaceAll('-','/')}〜${v.end.replaceAll('-','/')} のバケーション登録を取り消しますか？`))return;
+    state.vacation=null;
+    addEvent('schedule',`バケーション登録を取り消し（${v.start}〜${v.end}）`,v.start);
+    save(false);renderCalendar();renderAll();$('#scheduleDialog')?.close();
+  };
   const rm=$('#reduceMotion'),cm=$('#compactMode');
   const ui=JSON.parse(localStorage.getItem('questlife-ui')||'{}');if(rm){rm.checked=!!ui.reduceMotion;document.body.classList.toggle('reduce-motion',!!ui.reduceMotion);rm.onchange=()=>{ui.reduceMotion=rm.checked;localStorage.setItem('questlife-ui',JSON.stringify(ui));document.body.classList.toggle('reduce-motion',rm.checked)}}if(cm){cm.checked=!!ui.compact;document.body.classList.toggle('compact',!!ui.compact);cm.onchange=()=>{ui.compact=cm.checked;localStorage.setItem('questlife-ui',JSON.stringify(ui));document.body.classList.toggle('compact',cm.checked)}}
   renderCalendar();
