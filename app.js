@@ -28,7 +28,21 @@ function nightShiftWindow(n){
   return{start,end,deadline};
 }
 function activeNightShift(at=now()){
-  const matches=state.nightShifts.map(n=>({n,w:nightShiftWindow(n)})).filter(x=>at>=x.w.start&&at<x.w.deadline).sort((a,b)=>b.w.start-a.w.start);
+  // 1) 前日の夜勤が締切前なら、その前日を活動日として優先する。
+  const previousMatches=state.nightShifts.map(n=>({n,w:nightShiftWindow(n)}))
+    .filter(x=>x.n.date<localDateKey(at)&&at>=x.w.start&&at<x.w.deadline)
+    .sort((a,b)=>b.w.start-a.w.start);
+  if(previousMatches.length)return previousMatches[0].n;
+
+  // 2) 当日に夜勤予定が登録されている場合は、開始前でもその日を夜勤活動日として扱う。
+  const todayKey=localDateKey(at);
+  const todayShift=state.nightShifts.find(n=>n.date===todayKey);
+  if(todayShift)return todayShift;
+
+  // 3) 開始済みかつ締切前の夜勤を拾う。
+  const matches=state.nightShifts.map(n=>({n,w:nightShiftWindow(n)}))
+    .filter(x=>at>=x.w.start&&at<x.w.deadline)
+    .sort((a,b)=>b.w.start-a.w.start);
   return matches[0]?.n||null;
 }
 function activityKey(){return activeNightShift()?.date||currentCalendarKey()}
@@ -250,8 +264,14 @@ function renderDebug(){
   const debugNow=$('#debugNow'),debugSummary=$('#debugSummary'),eventLog=$('#eventLog');
   if(!debugNow&&!debugSummary&&!eventLog)return;
   if(state.debugNow&&debugNow)debugNow.value=toDateTimeLocalValue(now());
-  const log=dayLog(),d=deadlineInfo();
-  if(debugSummary)debugSummary.textContent=`現在判定：${now().toLocaleString('ja-JP')}\nカレンダー日：${currentCalendarKey()}\n活動日：${activityKey()}\nモード：${mode()}\n締切：${d.date.toLocaleString('ja-JP')}\n確定済み：${log.closed?'はい':'いいえ'}\n保護期間：${state.closedCount<7?`有効（${state.closedCount}/7活動日）`:'終了'}\n負荷補正：${progression()>0?'少し増加':progression()<0?'少し軽減':'標準'}`;
+  const log=dayLog(),d=deadlineInfo(),n=activeNightShift();
+  let nightDetail='夜勤判定：なし';
+  if(n){
+    const w=nightShiftWindow(n),at=now();
+    const reason=n.date===currentCalendarKey()&&at<w.start?'当日の夜勤予定（開始前）':n.date<currentCalendarKey()&&at<w.deadline?'前日の夜勤を締切まで継続':'夜勤時間中';
+    nightDetail=`夜勤判定：${reason}\n夜勤活動日：${n.date}\n夜勤開始：${w.start.toLocaleString('ja-JP')}\n夜勤終了：${w.end.toLocaleString('ja-JP')}\n夜勤締切：${w.deadline.toLocaleString('ja-JP')}`;
+  }
+  if(debugSummary)debugSummary.textContent=`現在判定：${now().toLocaleString('ja-JP')}\nカレンダー日：${currentCalendarKey()}\n活動日：${activityKey()}\nモード：${mode()}\n${nightDetail}\n現在の締切：${d.date.toLocaleString('ja-JP')}\n確定済み：${log.closed?'はい':'いいえ'}\n保護期間：${state.closedCount<7?`有効（${state.closedCount}/7活動日）`:'終了'}\n負荷補正：${progression()>0?'少し増加':progression()<0?'少し軽減':'標準'}`;
   if(eventLog){const visible=state.events.filter(e=>e.type!=='lost');eventLog.innerHTML=visible.length?visible.map(e=>`<div class="event-item"><b>${esc(e.key)}</b>［${esc(e.type)}］${esc(e.text)}</div>`).join(''):'まだ処理履歴はありません。'}
 }
 
