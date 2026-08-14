@@ -219,7 +219,8 @@
 
   <dialog id="developerSettingsDialog" class="settings-dialog">
     <div class="settings-dialog-head"><div><span>設定</span><h2>その他</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
-    <h3>iPhoneへの追加</h3><ol class="install-steps"><li>SafariでQuestLifeを開く</li><li>共有ボタンを押す</li><li>「ホーム画面に追加」を選ぶ</li></ol>
+    <h3>iPhoneへの追加</h3><ol class="install-steps"><li>SafariでQuestLifeを開く</li><li>共有ボタンを押す</li><li>「ホーム画面に追加」を選ぶ</li><li>「Webアプリとして開く」をオンにして追加</li></ol>
+    <details class="developer-card"><summary>開発テスト</summary><label>テスト日時<input id="debugNow" type="datetime-local"></label><div class="row"><button id="applyDebugNow" class="secondary" type="button">適用</button><button id="clearDebugNow" class="secondary" type="button">実日時に戻す</button></div><button id="addTestRewards" class="secondary" type="button">テスト用データを追加</button><button id="resetToday" class="secondary" type="button">現在の活動日の記録をリセット</button><div id="debugSummary" class="debug-box"></div><div id="eventLog" class="event-log muted"></div></details>
   </dialog>
 
   <dialog id="scheduleDialog" class="settings-dialog schedule-dialog">

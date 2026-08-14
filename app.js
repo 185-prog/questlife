@@ -4,6 +4,8 @@ const localDateKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate
 const parseLocal=(date,time='00:00')=>new Date(`${date}T${time}:00`);
 const addDays=(date,n)=>{const d=new Date(`${date}T12:00:00`);d.setDate(d.getDate()+n);return localDateKey(d)};
 const clone=x=>JSON.parse(JSON.stringify(x));
+const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
 const defaults={version:8,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,streak:0,inventory:['旅人の服','ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 let loaded={};try{loaded=JSON.parse(localStorage.getItem('questlife')||'{}')}catch{}
@@ -247,7 +249,7 @@ function renderSchedule(){}
 function renderDebug(){
   const debugNow=$('#debugNow'),debugSummary=$('#debugSummary'),eventLog=$('#eventLog');
   if(!debugNow&&!debugSummary&&!eventLog)return;
-  if(state.debugNow&&debugNow)debugNow.value=state.debugNow.slice(0,16);
+  if(state.debugNow&&debugNow)debugNow.value=toDateTimeLocalValue(now());
   const log=dayLog(),d=deadlineInfo();
   if(debugSummary)debugSummary.textContent=`現在判定：${now().toLocaleString('ja-JP')}\nカレンダー日：${currentCalendarKey()}\n活動日：${activityKey()}\nモード：${mode()}\n締切：${d.date.toLocaleString('ja-JP')}\n確定済み：${log.closed?'はい':'いいえ'}\n保護期間：${state.closedCount<7?`有効（${state.closedCount}/7活動日）`:'終了'}\n負荷補正：${progression()>0?'少し増加':progression()<0?'少し軽減':'標準'}`;
   if(eventLog){const visible=state.events.filter(e=>e.type!=='lost');eventLog.innerHTML=visible.length?visible.map(e=>`<div class="event-item"><b>${esc(e.key)}</b>［${esc(e.type)}］${esc(e.text)}</div>`).join(''):'まだ処理履歴はありません。'}
@@ -343,6 +345,10 @@ $('#saveNotifications').onclick=async()=>{
   state.notificationSettings={...state.notificationSettings,enabled:$('#notificationsEnabled').checked,morning:$('#morningTime').value,night:$('#nightTime').value};save();
 };
 $('#testNotification').onclick=async()=>{if('Notification'in window&&Notification.permission==='default')await Notification.requestPermission();sendNotification('QuestLife テスト','通知の表示確認です。')};
+$('#applyDebugNow').onclick=()=>{const value=$('#debugNow').value;if(!value)return alert('テスト日時を入力してください。');const d=parseDateTimeLocalValue(value);if(Number.isNaN(d.getTime()))return alert('日時を正しく入力してください。');state.debugNow=d.toISOString();save()};
+$('#clearDebugNow').onclick=()=>{state.debugNow=null;$('#debugNow').value='';save()};
+$('#addTestRewards').onclick=()=>{['鉄の剣','革の盾','森のスライム','見習い竜'].forEach(x=>{if(!state.inventory.includes(x))state.inventory.push(x)});state.closedCount=7;addEvent('debug','テスト用報酬を追加し、初心者保護を終了');save()};
+$('#resetToday').onclick=()=>{if(!confirm(`活動日 ${activityKey()} の記録を消しますか？`))return;delete state.logs[activityKey()];state.events=state.events.filter(e=>e.key!==activityKey());save()};
 $('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`QuestLife-backup-${currentCalendarKey()}.json`;a.click();URL.revokeObjectURL(a.href);$('#backupStatus').textContent='バックアップを書き出しました。'};
 $('#importDataButton').onclick=()=>$('#importDataFile').click();
 $('#importDataFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!data||typeof data!=='object'||!data.logs||!data.tasks)throw new Error('形式が違います');if(!confirm('現在のデータをバックアップ内容で置き換えますか？'))return;state=Object.assign({},defaults,data,{version:9});state.equipment??=['mat','dumbbell'];state.notificationSettings??={enabled:false,morning:'09:00',night:'21:00'};save();$('#backupStatus').textContent='バックアップを復元しました。'}catch(err){alert(`読み込みに失敗しました：${err.message}`)}finally{e.target.value=''}};
