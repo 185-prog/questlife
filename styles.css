@@ -195,3 +195,8 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
     overscroll-behavior:contain;
   }
 }
+
+.calendar-detail-actions{display:grid;gap:8px;margin-top:12px}.calendar-detail-actions .secondary{padding:10px 12px;font-size:13px}
+
+/* v7.8 weight-goal training adjustment */
+.goal-analysis{margin-top:10px;padding:11px 12px;border-radius:12px;background:rgba(91,102,232,.07);font-size:13px;line-height:1.55;color:#596176}
