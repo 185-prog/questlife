@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v8.0</small></h1>
+      <h1>QuestLife <small class="version">v8.2</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -103,6 +103,40 @@
       </div>
     </section>
 
+    <section id="quest" class="tab quest-screen">
+      <div class="page-heading quest-heading"><div><span class="quest-overline">ADVENTURER GUILD</span><h2>クエスト</h2></div><div class="quest-wallet-mini"><span>所持金</span><b id="questGold">0G</b></div></div>
+
+      <button id="openHeroPanel" class="quest-hero-card" type="button" aria-haspopup="dialog" aria-controls="heroDialog">
+        <div class="quest-hero-visual game-visual" id="questHeroVisual" data-game-visual="hero" aria-hidden="true"><span>⚔</span></div>
+        <div class="quest-hero-copy">
+          <span class="quest-card-kicker">ADVENTURER</span>
+          <h3 id="questHeroName">名もなき旅人</h3>
+          <div class="quest-hero-stats"><b id="questHeroLevel">Lv.1</b><span id="questHeroXp">EXP 0/100</span></div>
+          <div class="quest-xp-track quest-page-xp" aria-hidden="true"><span id="questHeroXpBar"></span></div>
+        </div>
+        <span class="quest-card-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <div class="quest-hub-grid">
+        <button id="openMonstersPanel" class="quest-hub-card" type="button" aria-haspopup="dialog" aria-controls="monstersDialog">
+          <div class="quest-hub-icon monster-hub-icon" aria-hidden="true">◉</div>
+          <div><span>仲間</span><h3>モンスター</h3><p id="questMonsterSummary">1体</p></div>
+          <b>›</b>
+        </button>
+        <button id="openShopPanel" class="quest-hub-card" type="button" aria-haspopup="dialog" aria-controls="shopDialog">
+          <div class="quest-hub-icon shop-hub-icon" aria-hidden="true">♜</div>
+          <div><span>ギルド</span><h3>ショップ</h3><p id="questShopSummary">0G 所持</p></div>
+          <b>›</b>
+        </button>
+      </div>
+
+      <div class="card quest-daily-card">
+        <div class="section-title"><div><span class="quest-card-kicker">TODAY</span><h2>今日の冒険</h2></div><strong id="questDailyGrade">進行中</strong></div>
+        <div class="quest-daily-progress"><div><span>クエスト</span><b id="questDailyProgress">0/1</b></div><div><span>獲得予定</span><b id="questDailyReward">+0 EXP / +0G</b></div></div>
+        <div class="guide-progress quest-daily-bar" aria-hidden="true"><span id="questDailyBar"></span></div>
+      </div>
+    </section>
+
     <section id="record" class="tab record-screen">
       <div class="page-heading"><h2>記録</h2></div>
 
@@ -184,6 +218,7 @@
   <nav class="bottom-nav" aria-label="メインメニュー">
     <button data-tab="today" class="active"><span>⌂</span>今日</button>
     <button data-tab="workout"><span>◎</span>運動</button>
+    <button data-tab="quest"><span>♢</span>クエスト</button>
     <button data-tab="record"><span>▥</span>記録</button>
     <button data-tab="settings"><span>⚙</span>設定</button>
   </nav>
@@ -241,6 +276,31 @@
       <div class="food-ai-comment"><span>AIコメント</span><p id="foodHistoryAiComment"></p></div>
       <button id="saveFoodHistoryEdit" class="primary" type="button">この週を更新</button>
     </div>
+  </dialog>
+
+  <dialog id="heroDialog" class="quest-detail-dialog">
+    <button class="dialog-close close-quest-detail" type="button" aria-label="閉じる">×</button>
+    <div class="quest-detail-visual game-visual" id="heroDialogVisual" data-game-visual="hero" aria-hidden="true"><span>⚔</span></div>
+    <span class="quest-dialog-kicker">ADVENTURER</span>
+    <h2 id="heroDialogName">名もなき旅人</h2>
+    <div class="quest-dialog-stats"><div><span>LEVEL</span><b id="heroDialogLevel">Lv.1</b></div><div><span>EXP</span><b id="heroDialogXp">0/100</b></div><div><span>冒険力</span><b id="heroDialogPower">1</b></div><div><span>GOLD</span><b id="heroDialogGold">0G</b></div></div>
+    <div class="quest-subsection"><div class="section-title"><h3>現在の装備</h3><span id="heroGearPower">装備力 +0</span></div><div id="heroEquipmentSlots" class="gear-slot-list"></div></div>
+    <div class="quest-subsection"><div class="section-title"><h3>所持装備</h3><span id="heroOwnedGearCount">0個</span></div><div id="heroEquipmentPreview" class="quest-collection"></div></div>
+  </dialog>
+
+  <dialog id="monstersDialog" class="quest-detail-dialog">
+    <button class="dialog-close close-quest-detail" type="button" aria-label="閉じる">×</button>
+    <span class="quest-dialog-kicker">PARTY</span>
+    <h2>仲間モンスター</h2>
+    <div id="monsterCollection" class="quest-collection monster-collection"></div>
+  </dialog>
+
+  <dialog id="shopDialog" class="quest-detail-dialog">
+    <button class="dialog-close close-quest-detail" type="button" aria-label="閉じる">×</button>
+    <span class="quest-dialog-kicker">GUILD SHOP</span>
+    <div class="quest-shop-head"><h2>ショップ</h2><strong id="shopGold">0G</strong></div>
+    <p class="quest-shop-note">テスト用ショップです。購入した装備は主人公画面から付け替えできます。</p>
+    <div id="shopItems" class="quest-shop-list"></div>
   </dialog>
 
   <dialog id="guideDialog" class="guide-dialog">

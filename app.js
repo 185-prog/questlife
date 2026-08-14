@@ -9,13 +9,58 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=14;
-const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+const APP_DATA_VERSION=16;
+const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+
+// RPGの見た目と内容はここに集約。image を画像パスへ変更すれば後から差し替え可能。
+const GAME_CONTENT={
+  hero:{default:{image:null,maleIcon:'⚔',femaleIcon:'⚔'}},
+  receptionist:{default:{image:null}},
+  monsters:{'ひよこスライム':{image:null,icon:'◉',rarity:'★'}},
+  equipment:{
+    '旅人の服':{image:null,icon:'◇',rarity:'★',slot:'armor',power:1,price:0},
+    '木の剣':{image:null,icon:'🗡',rarity:'★',slot:'weapon',power:3,price:60},
+    '革の鎧':{image:null,icon:'🛡',rarity:'★',slot:'armor',power:4,price:90},
+    '幸運のお守り':{image:null,icon:'✦',rarity:'★★',slot:'accessory',power:2,price:120},
+    '鉄の剣':{image:null,icon:'⚔',rarity:'★★',slot:'weapon',power:7,price:180}
+  }
+};
+const GEAR_SLOTS={weapon:'武器',armor:'防具',accessory:'アクセサリー'};
+const SHOP_CATALOG=['木の剣','革の鎧','幸運のお守り','鉄の剣'];
+function gameItemInfo(type,name){return GAME_CONTENT[type]?.[name]||{image:null,icon:type==='monsters'?'◉':'◇',rarity:'★'}}
+function visualHtml(info,fallback){return info?.image?`<img src="${esc(info.image)}" alt="">`:`<span>${esc(info?.icon||fallback)}</span>`}
+function isMonsterName(name){return !!GAME_CONTENT.monsters?.[name]||/スライム|竜|ドラゴン|精霊|ゴーレム|モンスター/.test(String(name))}
+function ownedGear(){return(state.inventory||[]).filter(name=>!isMonsterName(name)&&GAME_CONTENT.equipment?.[name])}
+function gearPower(){return Object.values(state.equippedGear||{}).reduce((sum,name)=>sum+(name?toFiniteNumber(gameItemInfo('equipment',name).power)||0:0),0)}
+function adventurePower(){return Math.max(1,state.level)+gearPower()}
+function purchaseGear(name,{record=true}={}){
+  const info=GAME_CONTENT.equipment?.[name],price=toFiniteNumber(info?.price);
+  if(!info||price===null||price<0)return{ok:false,reason:'invalid'};
+  if((state.inventory||[]).includes(name))return{ok:false,reason:'owned'};
+  if(state.gold<price)return{ok:false,reason:'gold'};
+  state.gold-=price;state.inventory.push(name);if(record)addEvent('shop',`${name} を ${price}G で購入`);
+  return{ok:true,price};
+}
+function setEquippedGear(name,{record=true}={}){
+  const info=GAME_CONTENT.equipment?.[name],slot=info?.slot;
+  if(!slot||!GEAR_SLOTS[slot]||!(state.inventory||[]).includes(name))return false;
+  state.equippedGear={...(state.equippedGear||{}),[slot]:name};if(record)addEvent('equipment',`${name} を装備`);
+  return true;
+}
+function clearEquippedGear(slot,{record=true}={}){
+  if(!GEAR_SLOTS[slot])return false;
+  const current=state.equippedGear?.[slot];state.equippedGear={...(state.equippedGear||{}),[slot]:null};
+  if(current&&record)addEvent('equipment',`${current} を外した`);return true;
+}
+
 function normalizeState(raw={}){
   const s=Object.assign({},clone(defaults),raw||{},{version:APP_DATA_VERSION});
   ['tasks','inventory','danger','lost','weights','nightShifts','events'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=clone(defaults[k])});
   ['logs','weeklyFood','goals'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]=clone(defaults[k])});
   s.equipment=Array.isArray(s.equipment)?s.equipment:['mat','dumbbell'];
+  const rawEquipped=raw?.equippedGear;
+  s.equippedGear=rawEquipped&&typeof rawEquipped==='object'&&!Array.isArray(rawEquipped)?{...clone(defaults.equippedGear),...rawEquipped}:clone(defaults.equippedGear);
+  for(const slot of Object.keys(GEAR_SLOTS)){const name=s.equippedGear[slot];if(name&&(!s.inventory.includes(name)||gameItemInfo('equipment',name).slot!==slot))s.equippedGear[slot]=null}
   s.level=Math.max(1,Math.floor(toFiniteNumber(s.level)||1));s.xp=Math.max(0,Math.floor(toFiniteNumber(s.xp)||0));s.gold=Math.max(0,Math.floor(toFiniteNumber(s.gold)||0));s.streak=Math.max(0,Math.floor(toFiniteNumber(s.streak)||0));
   s.notificationSettings={enabled:false,morning:'09:00',night:'21:00',lastMorning:null,lastNight:null,...(s.notificationSettings||{})};
   s.goals={...(s.goals||{})};s.goals.maxMinutes=Math.max(30,Math.min(60,+s.goals.maxMinutes||60));s.goals.weeklyTargets=s.goals.weeklyTargets&&typeof s.goals.weeklyTargets==='object'?s.goals.weeklyTargets:{};
@@ -256,7 +301,7 @@ function chooseWorkout(checkin){
   return out;
 }
 
-function renderAll(){renderMode();renderHero();renderTasks();renderCheckin();renderWeeklyPlan();renderWorkout();renderWeeklyFood();renderInventory();renderWeights();renderHomeWeight();renderSchedule();renderDebug();updateBattle();renderDashboard();renderGameStatus();renderHistory();renderNotificationSettings();renderEquipment();renderGoalAnalysis()}
+function renderAll(){renderMode();renderHero();renderTasks();renderCheckin();renderWeeklyPlan();renderWorkout();renderWeeklyFood();renderInventory();renderWeights();renderHomeWeight();renderSchedule();renderDebug();updateBattle();renderDashboard();renderGameStatus();renderQuestHub();renderHistory();renderNotificationSettings();renderEquipment();renderGoalAnalysis()}
 function renderMode(){const m=mode();document.body.classList.toggle('vacation',m==='vacation');$('#modeLabel').textContent=m==='vacation'?'🏝️ バケーション':m==='night'?'🌙 夜勤日':'通常日';$('#deadlineLabel').textContent=`活動日 ${activityKey()} / ${deadlineInfo().label}`;$('#checkinCard').style.display=m==='vacation'?'none':'';$('#finishDay').textContent=m==='vacation'?'今日の旅の記録を残す':'今日を終了する'}
 function renderHero(){const next=state.level*100;$('#level').textContent=state.level;$('#xp').textContent=state.xp;$('#xpNext').textContent=next;$('#xpBar').style.width=Math.min(100,state.xp/next*100)+'%';$('#streakCount').textContent=state.streak;$('#avatar').textContent=state.gender==='female'?'👩':'🧑';$('#heroName').textContent=state.level>=10?'王国の守護者':state.level>=5?'ギルドの剣士':'名もなき旅人'}
 function renderTasks(){const log=dayLog(),wrap=$('#todayTasks'),edit=$('#taskEditor'),dayTasks=tasksForLog(log);wrap.innerHTML='';edit.innerHTML='';if(mode()==='vacation'){wrap.innerHTML='<p class="muted">バケーション中は通常タスクを休止しています。</p>';$('#taskProgressText').textContent='一時停止';return}dayTasks.forEach((t)=>{const row=document.createElement('div');row.className='task '+(log.tasks[t.id]?'done':'');row.innerHTML=`<input type="checkbox" ${log.tasks[t.id]?'checked':''} ${log.closed?'disabled':''}><div class="task-main"><strong>${esc(t.name)}</strong>${t.minutes?`<div class="timer">⏱ ${t.minutes}分タイマー</div>`:''}</div>${t.minutes?'<button class="small-btn">開始</button>':''}`;row.querySelector('input').onchange=e=>{log.tasks[t.id]=e.target.checked;save()};if(t.minutes){const b=row.querySelector('button');b.disabled=log.closed;b.onclick=()=>startTimer(t,b)}wrap.appendChild(row)});state.tasks.forEach((t,i)=>{const er=document.createElement('div');er.className='editor-row';er.innerHTML=`<span>${esc(t.name)}${t.minutes?`（${t.minutes}分）`:''}</span><button class="small-btn">削除</button>`;er.querySelector('button').onclick=()=>{state.tasks.splice(i,1);syncCurrentTaskSnapshot();save()};edit.appendChild(er)});const done=dayTasks.filter(t=>log.tasks[t.id]).length;$('#taskProgressText').textContent=`${done}/${dayTasks.length}${log.closed?'（確定済み）':''}`;if($('#taskCountLabel'))$('#taskCountLabel').textContent=`${state.tasks.length}/5`}
@@ -392,7 +437,8 @@ function runSelfTests(){
   const ok=(name,fn)=>{try{fn();results.push({name,ok:true})}catch(err){results.push({name,ok:false,error:err?.message||String(err)})}};
   const expect=(condition,message)=>{if(!condition)throw new Error(message)};
   try{
-    ok('必須UI要素',()=>{for(const id of ['today','workout','record','settings','calendarGrid','goalAnalysis','debugSummary'])expect(!!$('#'+id),`#${id} がありません`) });
+    ok('必須UI要素',()=>{for(const id of ['today','workout','quest','record','settings','calendarGrid','goalAnalysis','debugSummary'])expect(!!$('#'+id),`#${id} がありません`) });
+    ok('クエスト画面UI',()=>{expect(!!$('#openHeroPanel')&&!!$('#openMonstersPanel')&&!!$('#openShopPanel'),'クエスト画面の入口が不足しています');expect(!!$('#shopItems')&&!!$('#heroEquipmentSlots'),'ショップ・装備UIが不足しています');expect($$('.bottom-nav button').some(b=>b.dataset.tab==='quest'),'クエストタブがありません')});
     ok('通常日の締切',()=>{state=normalizeState({debugNow:parseLocal('2026-08-10','10:00').toISOString()});const d=deadlineInfo().date;expect(localDateKey(d)==='2026-08-11'&&d.getHours()===0&&d.getMinutes()===0,'24:00境界が不正')});
     ok('夜勤の活動日境界',()=>{state=normalizeState({nightShifts:[{date:'2026-08-10',start:'22:00',end:'07:00',deadline:'12:00'}]});state.debugNow=parseLocal('2026-08-10','10:00').toISOString();expect(activityKey()==='2026-08-10','開始前');state.debugNow=parseLocal('2026-08-11','11:59').toISOString();expect(activityKey()==='2026-08-10','締切前');state.debugNow=parseLocal('2026-08-11','12:00').toISOString();expect(activityKey()==='2026-08-11','締切後')});
     ok('バケーション優先',()=>{state=normalizeState({nightShifts:[{date:'2026-08-10',start:'22:00',end:'07:00',deadline:'12:00'}],vacation:{start:'2026-08-11',end:'2026-08-12'}});state.debugNow=parseLocal('2026-08-11','01:00').toISOString();expect(mode()==='vacation'&&activityKey()==='2026-08-11','夜勤がバケーションより優先されています')});
@@ -405,6 +451,8 @@ function runSelfTests(){
     ok('タスク履歴スナップショット',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;state.tasks=[{id:'b',name:'B'}];const c=completion(l);expect(c.done===1&&c.total===1,'過去日のタスク内容が現在設定に置き換わります')});
     ok('クエスト報酬計算',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.tasks.b=true;l.workout=true;const r=questReward(l);expect(r.all&&r.xp===84&&r.gold===66&&r.grade==='S','全達成報酬が不正')});
     ok('部分達成報酬',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;const r=questReward(l);expect(!r.all&&r.xp===12&&r.gold===8&&r.grade==='C','部分達成報酬が不正')});
+    ok('ショップ購入',()=>{state=normalizeState({gold:100,inventory:['旅人の服']});const r=purchaseGear('木の剣',{record:false});expect(r.ok&&state.gold===40&&state.inventory.includes('木の剣'),'購入またはゴールド減算が不正');const second=purchaseGear('木の剣',{record:false});expect(!second.ok&&state.gold===40,'同じ装備を二重購入できています')});
+    ok('装備切替',()=>{state=normalizeState({level:1,inventory:['旅人の服','木の剣'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null}});expect(setEquippedGear('木の剣',{record:false})===true&&state.equippedGear.weapon==='木の剣','武器を装備できません');expect(adventurePower()===5,'冒険力の計算が不正');clearEquippedGear('weapon',{record:false});expect(state.equippedGear.weapon===null,'装備を外せません')});
     ok('終了時の二重報酬防止',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.workout=true;expect(finalizeDay('2026-08-10',{show:false})===true,'初回確定失敗');const g=state.gold,x=state.xp;expect(finalizeDay('2026-08-10',{show:false})===false&&state.gold===g&&state.xp===x,'二重報酬が発生')});
     ok('締切後の自動確定',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','01:00').toISOString(),logs:{'2026-08-09':{tasks:{a:false},taskSnapshot:[{id:'a',name:'A'}],checkin:{condition:'普通',motivation:'普通',soreness:'なし',back:'痛くない',duration:30},workoutPlan:[],exerciseChecks:{},workout:false,closed:false}}});expect(autoFinalizeExpiredLogs()===true&&state.logs['2026-08-09'].closed===true,'古い活動日が自動確定されません')});
   }finally{
@@ -510,6 +558,49 @@ function renderGameStatus(){
   }
 }
 
+function renderQuestHub(){
+  if(!$('#quest'))return;
+  const log=dayLog(),q=questSummary(log),reward=questReward(log),next=state.level*100;
+  const heroName=state.level>=10?'王国の守護者':state.level>=5?'ギルドの剣士':'名もなき旅人';
+  const pct=Math.min(100,state.xp/next*100);
+  const monsters=(state.inventory||[]).filter(isMonsterName),gear=ownedGear();
+  const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
+  set('#questGold',`${state.gold}G`);set('#questHeroName',heroName);set('#questHeroLevel',`Lv.${state.level}`);set('#questHeroXp',`EXP ${state.xp}/${next}`);
+  set('#questMonsterSummary',monsters.length?`${monsters.length}体の仲間`:'仲間はまだいません');set('#questShopSummary',`${SHOP_CATALOG.length}商品 / ${state.gold}G`);
+  set('#questDailyProgress',mode()==='vacation'?'休息日':`${q.questDone}/${q.questTotal}`);set('#questDailyReward',log.closed?`確定 +${log.result?.xp||0} EXP / +${log.result?.gold||0}G`:`+${reward.xp} EXP / +${reward.gold}G`);set('#questDailyGrade',log.closed?`評価 ${log.result?.grade||'—'}`:q.all?'全達成':'進行中');
+  const hp=$('#questHeroXpBar');if(hp)hp.style.width=`${pct}%`;const dp=$('#questDailyBar');if(dp)dp.style.width=`${q.questTotal?Math.round(q.questDone/q.questTotal*100):0}%`;
+  const heroVisual=GAME_CONTENT.hero.default;for(const id of ['#questHeroVisual','#heroDialogVisual']){const e=$(id);if(e)e.innerHTML=visualHtml(heroVisual,'⚔')}
+  set('#heroDialogName',heroName);set('#heroDialogLevel',`Lv.${state.level}`);set('#heroDialogXp',`${state.xp}/${next}`);set('#heroDialogPower',String(adventurePower()));set('#heroDialogGold',`${state.gold}G`);set('#heroGearPower',`装備力 +${gearPower()}`);set('#heroOwnedGearCount',`${gear.length}個`);set('#shopGold',`${state.gold}G`);
+
+  const slots=$('#heroEquipmentSlots');
+  if(slots){
+    slots.innerHTML=Object.entries(GEAR_SLOTS).map(([slot,label])=>{
+      const name=state.equippedGear?.[slot],info=name?gameItemInfo('equipment',name):null;
+      return `<div class="gear-slot-row"><span class="gear-slot-label">${esc(label)}</span>${name?`<div class="gear-slot-item"><div class="quest-item-visual">${visualHtml(info,'◇')}</div><div><b>${esc(name)}</b><span>${esc(info.rarity||'★')} / 冒険力 +${info.power||0}</span></div></div><button class="small-btn unequip-gear" data-slot="${esc(slot)}" type="button">外す</button>`:`<div class="gear-slot-empty">未装備</div>`}</div>`;
+    }).join('');
+    slots.querySelectorAll('.unequip-gear').forEach(b=>b.onclick=()=>{clearEquippedGear(b.dataset.slot);save()});
+  }
+
+  const equip=$('#heroEquipmentPreview');
+  if(equip){
+    equip.innerHTML=gear.length?gear.map(name=>{const info=gameItemInfo('equipment',name),equipped=state.equippedGear?.[info.slot]===name;return `<div class="quest-item gear-owned-item"><div class="quest-item-visual">${visualHtml(info,'◇')}</div><div class="quest-item-main"><b>${esc(name)}</b><span>${esc(info.rarity||'★')} ${esc(GEAR_SLOTS[info.slot]||'装備')} / 冒険力 +${info.power||0}</span></div><button class="small-btn equip-gear" data-gear="${esc(name)}" type="button" ${equipped?'disabled':''}>${equipped?'装備中':'装備する'}</button></div>`}).join(''):'<div class="quest-empty">装備はまだありません。</div>';
+    equip.querySelectorAll('.equip-gear').forEach(b=>b.onclick=()=>{if(setEquippedGear(b.dataset.gear))save()});
+  }
+
+  const coll=$('#monsterCollection');if(coll)coll.innerHTML=monsters.length?monsters.map(name=>{const info=gameItemInfo('monsters',name);return `<div class="quest-item"><div class="quest-item-visual">${visualHtml(info,'◉')}</div><div><b>${esc(name)}</b><span>${esc(info.rarity||'★')} 仲間モンスター</span></div></div>`}).join(''):'<div class="quest-empty">仲間モンスターはまだいません。</div>';
+
+  const shop=$('#shopItems');
+  if(shop){
+    shop.innerHTML=SHOP_CATALOG.map(name=>{const info=gameItemInfo('equipment',name),owned=state.inventory.includes(name),equipped=state.equippedGear?.[info.slot]===name,afford=state.gold>=info.price;let action='';
+      if(equipped)action='<button class="shop-action" type="button" disabled>装備中</button>';
+      else if(owned)action=`<button class="shop-action equip-shop-gear" type="button" data-gear="${esc(name)}">装備する</button>`;
+      else action=`<button class="shop-action buy-gear" type="button" data-gear="${esc(name)}" ${afford?'':'disabled'}>${afford?`${info.price}Gで購入`:'G不足'}</button>`;
+      return `<div class="shop-item-card"><div class="shop-item-top"><div class="quest-item-visual">${visualHtml(info,'◇')}</div><div class="shop-item-copy"><span class="shop-rarity">${esc(info.rarity||'★')} ${esc(GEAR_SLOTS[info.slot]||'装備')}</span><h3>${esc(name)}</h3><p>冒険力 +${info.power||0}</p></div><b class="shop-price">${info.price}G</b></div>${action}</div>`;
+    }).join('');
+    shop.querySelectorAll('.buy-gear').forEach(b=>b.onclick=()=>{const name=b.dataset.gear,info=gameItemInfo('equipment',name);if(!confirm(`${name} を ${info.price}G で購入しますか？`))return;const r=purchaseGear(name);if(!r.ok){alert(r.reason==='gold'?'ゴールドが足りません。':'購入できません。');return}save();});
+    shop.querySelectorAll('.equip-shop-gear').forEach(b=>b.onclick=()=>{if(setEquippedGear(b.dataset.gear))save()});
+  }
+}
 function renderDashboard(){
   const log=dayLog(), c=completion(log);
   const taskTotal=c.total;
@@ -577,6 +668,9 @@ function checkInAppReminders(){
 setInterval(checkInAppReminders,30000);
 function switchTab(id){$$('.bottom-nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));$$('.tab').forEach(x=>x.classList.toggle('active',x.id===id));window.scrollTo({top:0,behavior:'smooth'})}
 $$('.bottom-nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+[['#openHeroPanel','#heroDialog'],['#openMonstersPanel','#monstersDialog'],['#openShopPanel','#shopDialog']].forEach(([button,dialog])=>{const b=$(button),d=$(dialog);if(b&&d)b.onclick=()=>{renderQuestHub();d.showModal()}});
+$$('.close-quest-detail').forEach(b=>b.onclick=()=>b.closest('dialog')?.close());
+$$('.quest-detail-dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
 $$('.jump-tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.target));
 $('#taskForm').onsubmit=e=>{e.preventDefault();if(state.tasks.length>=5)return alert('タスクは最大5個です。');state.tasks.push({id:newId(),name:$('#taskName').value.trim(),minutes:+$('#taskMinutes').value||0});syncCurrentTaskSnapshot();e.target.reset();$('#taskMinutes').value=0;save()};
 $('#generateWorkout').onclick=buildWorkout;
@@ -600,7 +694,7 @@ $('#saveNotifications').onclick=async()=>{
 $('#testNotification').onclick=async()=>{if('Notification'in window&&Notification.permission==='default')await Notification.requestPermission();sendNotification('QuestLife テスト','通知の表示確認です。')};
 $('#applyDebugNow').onclick=()=>{const value=$('#debugNow').value;if(!value)return alert('テスト日時を入力してください。');const d=parseDateTimeLocalValue(value);if(Number.isNaN(d.getTime()))return alert('日時を正しく入力してください。');state.debugNow=d.toISOString();autoFinalizeExpiredLogs();save()};
 $('#clearDebugNow').onclick=()=>{state.debugNow=null;$('#debugNow').value='';autoFinalizeExpiredLogs();save()};
-$('#addTestRewards').onclick=()=>{state.gold+=250;gainXp(90);addEvent('debug','RPGテスト用に250Gと90EXPを追加');save()};
+$('#addTestRewards').onclick=()=>{state.gold+=500;gainXp(90);addEvent('debug','RPGテスト用に500Gと90EXPを追加');save()};
 $('#resetToday').onclick=()=>{if(!confirm(`活動日 ${activityKey()} の記録を消しますか？`))return;delete state.logs[activityKey()];state.events=state.events.filter(e=>e.key!==activityKey());save()};
 if($('#runSelfTests'))$('#runSelfTests').onclick=runSelfTests;
 $('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`QuestLife-backup-${currentCalendarKey()}.json`;a.click();URL.revokeObjectURL(a.href);$('#backupStatus').textContent='バックアップを書き出しました。'};
