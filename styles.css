@@ -200,3 +200,25 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 
 /* v7.8 weight-goal training adjustment */
 .goal-analysis{margin-top:10px;padding:11px 12px;border-radius:12px;background:rgba(91,102,232,.07);font-size:13px;line-height:1.55;color:#596176}
+
+/* v8.0 quest foundation */
+.quest-wallet{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 10px}
+.quest-wallet>div{background:#f7f8fc;border:1px solid #eceef5;border-radius:14px;padding:10px 6px;text-align:center}
+.quest-wallet span{display:block;font-size:9px;letter-spacing:.08em;color:var(--sub);font-weight:800}
+.quest-wallet b{display:block;margin-top:4px;font-size:15px;color:var(--ink)}
+.quest-xp-track{height:6px;border-radius:999px;background:#eceef7;overflow:hidden;margin:0 3px 15px}
+.quest-xp-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6a75ed,#8a94ff);transition:width .35s ease}
+.quest-today-row{display:flex;align-items:center;justify-content:space-between;padding:11px 2px 4px;font-size:13px;color:var(--sub);font-weight:700}
+.quest-today-row strong{font-size:18px;color:var(--ink)}
+.quest-reward-hint{margin:7px 0 17px!important;padding:11px 12px;border-radius:13px;background:#f3f5ff;color:#5361c9!important;font-size:12px!important;line-height:1.55!important;text-align:left}
+#resultDialog{overflow:hidden}
+.quest-result-grade{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;color:var(--sub);font-size:12px;font-weight:800}
+.quest-result-grade strong{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#eef0ff;color:#5361dd;font-size:25px}
+.quest-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.quest-result-grid>div,.quest-reward-row>div{background:#f7f8fc;border:1px solid #eceef5;border-radius:14px;padding:11px 7px;text-align:center}
+.quest-result-grid span,.quest-reward-row span{display:block;color:var(--sub);font-size:10px;font-weight:700}
+.quest-result-grid b{display:block;margin-top:4px;font-size:14px;color:var(--ink)}
+.quest-reward-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.quest-reward-row strong{display:block;margin-top:3px;font-size:20px;color:#5361dd}
+.quest-bonus{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:#fff8df;color:#8a6818;font-size:12px;font-weight:800;text-align:center}
+.quest-levelup{margin:10px 0 0;padding:11px 12px;border-radius:12px;background:#edf8f3;color:#23795c;font-size:13px;font-weight:900;text-align:center}

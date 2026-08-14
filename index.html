@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v7.10</small></h1>
+      <h1>QuestLife <small class="version">v8.0</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -34,7 +34,7 @@
 
       <button class="guide-card" id="openGuide" type="button" aria-haspopup="dialog" aria-controls="guideDialog">
         <div class="guide-copy">
-          <span class="guide-label">今日の進捗</span>
+          <span class="guide-label">今日のクエスト</span>
           <strong class="guide-percent" id="dayPercent">0%</strong>
           <div class="guide-progress" aria-hidden="true"><span id="guideProgressBar"></span></div>
           <p id="todaySummary">まず1つだけ終わらせましょう。</p>
@@ -220,7 +220,7 @@
   <dialog id="developerSettingsDialog" class="settings-dialog">
     <div class="settings-dialog-head"><div><span>設定</span><h2>その他</h2></div><button class="dialog-close close-settings" type="button">×</button></div>
     <h3>iPhoneへの追加</h3><ol class="install-steps"><li>SafariでQuestLifeを開く</li><li>共有ボタンを押す</li><li>「ホーム画面に追加」を選ぶ</li><li>「Webアプリとして開く」をオンにして追加</li></ol>
-    <details class="developer-card"><summary>開発テスト</summary><label>テスト日時<input id="debugNow" type="datetime-local"></label><div class="row"><button id="applyDebugNow" class="secondary" type="button">適用</button><button id="clearDebugNow" class="secondary" type="button">実日時に戻す</button></div><button id="runSelfTests" class="primary" type="button">セルフテストを実行</button><div id="selfTestResults" class="debug-box" aria-live="polite"></div><button id="addTestRewards" class="secondary" type="button">テスト用データを追加</button><button id="resetToday" class="secondary" type="button">現在の活動日の記録をリセット</button><div id="debugSummary" class="debug-box"></div><div id="eventLog" class="event-log muted"></div></details>
+    <details class="developer-card"><summary>開発テスト</summary><label>テスト日時<input id="debugNow" type="datetime-local"></label><div class="row"><button id="applyDebugNow" class="secondary" type="button">適用</button><button id="clearDebugNow" class="secondary" type="button">実日時に戻す</button></div><button id="runSelfTests" class="primary" type="button">セルフテストを実行</button><div id="selfTestResults" class="debug-box" aria-live="polite"></div><button id="addTestRewards" class="secondary" type="button">RPGテスト用データを追加</button><button id="resetToday" class="secondary" type="button">現在の活動日の記録をリセット</button><div id="debugSummary" class="debug-box"></div><div id="eventLog" class="event-log muted"></div></details>
   </dialog>
 
   <dialog id="scheduleDialog" class="settings-dialog schedule-dialog">
@@ -249,14 +249,20 @@
       <div class="avatar-hair"></div><div class="avatar-face"></div><div class="avatar-body"></div>
     </div>
     <div class="guide-dialog-copy">
-      <span class="guide-dialog-kicker">QUESTLIFE GUIDE</span>
-      <h2>今日の案内</h2>
-      
+      <span class="guide-dialog-kicker">ADVENTURER GUILD</span>
+      <h2>今日のクエスト</h2>
+      <div class="quest-wallet">
+        <div><span>LEVEL</span><b id="guideLevel">Lv.1</b></div>
+        <div><span>EXP</span><b id="guideXp">0/100</b></div>
+        <div><span>GOLD</span><b id="guideGold">0G</b></div>
+      </div>
+      <div class="quest-xp-track" aria-hidden="true"><span id="guideXpBar"></span></div>
+      <div class="quest-today-row"><span>本日の依頼</span><strong id="guideQuestProgress">0/1</strong></div>
+      <p id="guideRewardHint" class="quest-reward-hint">今日を終了すると報酬が確定します。</p>
     </div>
     <div class="guide-actions">
       <button class="guide-action jump-tab" data-target="workout" type="button"><span>今日の運動</span><b>メニューを確認 ›</b></button>
-      <button class="guide-action" id="guideFinishDay" type="button"><b>今日を終了 ›</b></button>
-      <button class="guide-action is-future" type="button" disabled><span>今日の気配</span><b>受付嬢実装後に解放</b></button>
+      <button class="guide-action" id="guideFinishDay" type="button"><span>冒険を確定</span><b>今日を終了 ›</b></button>
     </div>
   </dialog>
 

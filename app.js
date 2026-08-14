@@ -9,13 +9,14 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=13;
-const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,streak:0,inventory:['旅人の服','ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+const APP_DATA_VERSION=14;
+const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 function normalizeState(raw={}){
   const s=Object.assign({},clone(defaults),raw||{},{version:APP_DATA_VERSION});
   ['tasks','inventory','danger','lost','weights','nightShifts','events'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=clone(defaults[k])});
   ['logs','weeklyFood','goals'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]=clone(defaults[k])});
   s.equipment=Array.isArray(s.equipment)?s.equipment:['mat','dumbbell'];
+  s.level=Math.max(1,Math.floor(toFiniteNumber(s.level)||1));s.xp=Math.max(0,Math.floor(toFiniteNumber(s.xp)||0));s.gold=Math.max(0,Math.floor(toFiniteNumber(s.gold)||0));s.streak=Math.max(0,Math.floor(toFiniteNumber(s.streak)||0));
   s.notificationSettings={enabled:false,morning:'09:00',night:'21:00',lastMorning:null,lastNight:null,...(s.notificationSettings||{})};
   s.goals={...(s.goals||{})};s.goals.maxMinutes=Math.max(30,Math.min(60,+s.goals.maxMinutes||60));s.goals.weeklyTargets=s.goals.weeklyTargets&&typeof s.goals.weeklyTargets==='object'?s.goals.weeklyTargets:{};
   for(const k of Object.keys(s.weeklyFood||{})){if(s.weeklyFood[k]==='good')s.weeklyFood[k]='restrained';if(s.weeklyFood[k]==='over')s.weeklyFood[k]='overeat';}
@@ -255,7 +256,7 @@ function chooseWorkout(checkin){
   return out;
 }
 
-function renderAll(){renderMode();renderHero();renderTasks();renderCheckin();renderWeeklyPlan();renderWorkout();renderWeeklyFood();renderInventory();renderWeights();renderHomeWeight();renderSchedule();renderDebug();updateBattle();renderDashboard();renderHistory();renderNotificationSettings();renderEquipment();renderGoalAnalysis()}
+function renderAll(){renderMode();renderHero();renderTasks();renderCheckin();renderWeeklyPlan();renderWorkout();renderWeeklyFood();renderInventory();renderWeights();renderHomeWeight();renderSchedule();renderDebug();updateBattle();renderDashboard();renderGameStatus();renderHistory();renderNotificationSettings();renderEquipment();renderGoalAnalysis()}
 function renderMode(){const m=mode();document.body.classList.toggle('vacation',m==='vacation');$('#modeLabel').textContent=m==='vacation'?'🏝️ バケーション':m==='night'?'🌙 夜勤日':'通常日';$('#deadlineLabel').textContent=`活動日 ${activityKey()} / ${deadlineInfo().label}`;$('#checkinCard').style.display=m==='vacation'?'none':'';$('#finishDay').textContent=m==='vacation'?'今日の旅の記録を残す':'今日を終了する'}
 function renderHero(){const next=state.level*100;$('#level').textContent=state.level;$('#xp').textContent=state.xp;$('#xpNext').textContent=next;$('#xpBar').style.width=Math.min(100,state.xp/next*100)+'%';$('#streakCount').textContent=state.streak;$('#avatar').textContent=state.gender==='female'?'👩':'🧑';$('#heroName').textContent=state.level>=10?'王国の守護者':state.level>=5?'ギルドの剣士':'名もなき旅人'}
 function renderTasks(){const log=dayLog(),wrap=$('#todayTasks'),edit=$('#taskEditor'),dayTasks=tasksForLog(log);wrap.innerHTML='';edit.innerHTML='';if(mode()==='vacation'){wrap.innerHTML='<p class="muted">バケーション中は通常タスクを休止しています。</p>';$('#taskProgressText').textContent='一時停止';return}dayTasks.forEach((t)=>{const row=document.createElement('div');row.className='task '+(log.tasks[t.id]?'done':'');row.innerHTML=`<input type="checkbox" ${log.tasks[t.id]?'checked':''} ${log.closed?'disabled':''}><div class="task-main"><strong>${esc(t.name)}</strong>${t.minutes?`<div class="timer">⏱ ${t.minutes}分タイマー</div>`:''}</div>${t.minutes?'<button class="small-btn">開始</button>':''}`;row.querySelector('input').onchange=e=>{log.tasks[t.id]=e.target.checked;save()};if(t.minutes){const b=row.querySelector('button');b.disabled=log.closed;b.onclick=()=>startTimer(t,b)}wrap.appendChild(row)});state.tasks.forEach((t,i)=>{const er=document.createElement('div');er.className='editor-row';er.innerHTML=`<span>${esc(t.name)}${t.minutes?`（${t.minutes}分）`:''}</span><button class="small-btn">削除</button>`;er.querySelector('button').onclick=()=>{state.tasks.splice(i,1);syncCurrentTaskSnapshot();save()};edit.appendChild(er)});const done=dayTasks.filter(t=>log.tasks[t.id]).length;$('#taskProgressText').textContent=`${done}/${dayTasks.length}${log.closed?'（確定済み）':''}`;if($('#taskCountLabel'))$('#taskCountLabel').textContent=`${state.tasks.length}/5`}
@@ -327,35 +328,50 @@ function renderFoodHistory(){
 function openFoodHistoryEditor(key){selectedFoodHistoryKey=key;const value=state.weeklyFood[key]||'normal';$('#foodHistoryEditor').hidden=false;$('#foodHistoryEditorTitle').textContent=`${key}〜${addDays(key,6)}`;$('#foodHistoryEditValue').value=value;$('#foodHistoryAiComment').textContent=foodAiComment(value)}
 function completion(log=dayLog()){const tasks=tasksForLog(log),done=tasks.filter(t=>log.tasks[t.id]).length;return{done,total:tasks.length,tasksAll:tasks.length>0&&done===tasks.length,all:tasks.length>0&&done===tasks.length&&log.workout}}
 function updateBattle(){const log=dayLog(),c=completion(log),td=c.total?c.done/c.total:0;const chance=Math.round(20+td*50+(log.workout?25:0));$('#battleChance').textContent=`勝率 ${Math.max(5,Math.min(100,chance))}%`;$('#battlePreview').textContent=log.closed?'この活動日は確定済みです。':chance>=80?'勝機は十分です。全達成でレア報酬が狙えます。':chance>=50?'勝負になります。あと一歩進めましょう。':'このままでは仲間が危険です。締切までに立て直してください。'}
-function gainXp(n){state.xp+=n;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++}}
+function questSummary(log=dayLog()){
+  const tasks=tasksForLog(log),taskDone=tasks.filter(t=>log.tasks?.[t.id]).length,taskTotal=tasks.length,workoutDone=!!log.workout;
+  const questTotal=taskTotal+1,questDone=taskDone+(workoutDone?1:0),tasksAll=taskTotal>0&&taskDone===taskTotal,all=tasksAll&&workoutDone;
+  return{taskDone,taskTotal,workoutDone,questDone,questTotal,tasksAll,all,ratio:questTotal?questDone/questTotal:0};
+}
+function questReward(log=dayLog()){
+  const q=questSummary(log);
+  const taskXp=q.taskDone*12,taskGold=q.taskDone*8,workoutXp=q.workoutDone?30:0,workoutGold=q.workoutDone?20:0;
+  const bonusXp=q.all?30:0,bonusGold=q.all?30:0,xp=taskXp+workoutXp+bonusXp,gold=taskGold+workoutGold+bonusGold;
+  const grade=q.all?'S':q.ratio>=.8?'A':q.ratio>=.6?'B':q.questDone>0?'C':'D';
+  return{...q,taskXp,taskGold,workoutXp,workoutGold,bonusXp,bonusGold,xp,gold,grade};
+}
+function gainXp(n){
+  const gained=Math.max(0,Math.floor(toFiniteNumber(n)||0)),beforeLevel=state.level;state.xp+=gained;
+  while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++}
+  return{gained,beforeLevel,afterLevel:state.level,levelsGained:state.level-beforeLevel};
+}
 function showResult(icon,title,body){$('#resultVisual').textContent=icon;$('#resultTitle').textContent=title;$('#resultBody').style.whiteSpace='pre-line';$('#resultBody').textContent=body;$('#resultDialog').showModal()}
+function showQuestResult(result,xpInfo){
+  const icon={S:'★',A:'A',B:'B',C:'C',D:'—'}[result.grade]||'✓';
+  $('#resultVisual').textContent=icon;$('#resultTitle').textContent='冒険結果';$('#resultBody').style.whiteSpace='normal';
+  const levelUp=xpInfo.levelsGained>0?`<div class="quest-levelup">LEVEL UP！ Lv.${xpInfo.beforeLevel} → Lv.${xpInfo.afterLevel}</div>`:'';
+  $('#resultBody').innerHTML=`<div class="quest-result-grade"><span>評価</span><strong>${esc(result.grade)}</strong></div><div class="quest-result-grid"><div><span>クエスト</span><b>${result.questDone}/${result.questTotal}</b></div><div><span>タスク</span><b>${result.taskDone}/${result.taskTotal}</b></div><div><span>運動</span><b>${result.workoutDone?'達成':'未達成'}</b></div></div><div class="quest-reward-row"><div><span>EXP</span><strong>+${result.xp}</strong></div><div><span>GOLD</span><strong>+${result.gold}G</strong></div></div>${result.bonusGold?`<p class="quest-bonus">全達成ボーナス +${result.bonusXp} EXP / +${result.bonusGold}G</p>`:''}${levelUp}`;
+  $('#resultDialog').showModal();
+}
 function finalizeDay(key,{automatic=false,show=true}={}){
   const log=dayLog(key);if(log.closed)return false;
   if(isVacationDate(key)){
-    log.closed=true;log.closedAt=now().toISOString();log.result={vacation:true,all:null,done:0,total:0};
-    const reward='南国の小竜';if(!state.inventory.includes(reward))state.inventory.push(reward);
-    addEvent('vacation','旅行記録を保存し、通常記録を一時停止',key);
+    log.closed=true;log.closedAt=now().toISOString();log.result={vacation:true,all:null,done:0,total:0,xp:0,gold:0,grade:'休息'};
+    addEvent('vacation','旅行記録を保存し、通常クエストを一時停止',key);
     if(automatic)addEvent('auto-close','締切到達により自動確定',key);
-    if(show)showResult('🏝️','旅の記録','穏やかな一日を記録しました。旅行専用モンスター「南国の小竜」が加わりました。');
+    if(show)showResult('🏝️','旅の記録','今日は休息日です。連続記録は維持され、通常クエストの報酬・ペナルティはありません。');
     return true;
   }
-  const c=completion(log),messages=[];
-  const oldDanger=state.danger.filter(x=>x.failedOn!==key);
-  if(oldDanger.length){
-    if(c.all){messages.push(`救出成功：「${oldDanger.map(x=>x.name).join('、')}」が帰還しました。`);addEvent('rescue',`${oldDanger.map(x=>x.name).join('、')}を救出`,key)}
-    else{for(const x of oldDanger){state.inventory=state.inventory.filter(i=>i!==x.name);state.lost.push({...x,lostOn:key});addEvent('lost','離脱処理を実行',key)}messages.push('救出作戦は失敗しました。仲間たちはボスとの戦いで帰らぬ者となりました。')}
-    state.danger=state.danger.filter(x=>x.failedOn===key);
-  }
-  if(c.all){
-    state.streak++;gainXp(80);const rewards=['鉄の剣','革の盾','森のスライム','見習い竜'];const r=rewards[Math.floor(Math.random()*rewards.length)];if(!state.inventory.includes(r))state.inventory.push(r);messages.push(`完全達成。ボスを撃破し「${r}」を獲得しました。`);addEvent('win',`完全達成。${r}を獲得`,key);if(show)showResult('✓','今日の記録を確定しました',messages.join('\n'));
-  }else{
-    state.streak=0;const protectedPeriod=state.closedCount<7,candidates=state.inventory.filter(x=>x!=='旅人の服'&&!state.danger.some(d=>d.name===x));
-    if(candidates.length&&!protectedPeriod){const target=candidates[Math.floor(Math.random()*candidates.length)];state.danger.push({name:target,failedOn:key});messages.push(`ボス戦で敗北。「${target}」が危機状態です。次の活動日を完全達成すれば救出できます。`);addEvent('danger',`${target}が危機状態`,key)}
-    else if(protectedPeriod){messages.push('ボス戦で敗北しましたが、開始7活動日の保護期間が適用されました。');addEvent('protected','初心者保護が適用',key)}else messages.push('ボス戦で敗北しました。');
-    if(show)showResult('!','今日の記録を確定しました',messages.join('\n'));
-  }
-  log.closed=true;log.closedAt=now().toISOString();log.result={all:c.all,done:c.done,total:c.total};state.lastClosed=key;state.firstClosedDate??=key;state.closedCount++;
+  const reward=questReward(log),xpInfo=gainXp(reward.xp);state.gold+=reward.gold;
+  if(reward.all)state.streak++;else state.streak=0;
+  log.closed=true;log.closedAt=now().toISOString();
+  log.result={all:reward.all,done:reward.taskDone,total:reward.taskTotal,questDone:reward.questDone,questTotal:reward.questTotal,workout:reward.workoutDone,xp:reward.xp,gold:reward.gold,grade:reward.grade,levelBefore:xpInfo.beforeLevel,levelAfter:xpInfo.afterLevel};
+  state.lastClosed=key;state.firstClosedDate??=key;state.closedCount++;
+  addEvent('quest',`評価${reward.grade} / ${reward.questDone}/${reward.questTotal} / +${reward.xp}EXP / +${reward.gold}G`,key);
+  if(reward.all)addEvent('complete','本日の全クエストを達成',key);
+  if(xpInfo.levelsGained)addEvent('levelup',`Lv.${xpInfo.beforeLevel} → Lv.${xpInfo.afterLevel}`,key);
   if(automatic)addEvent('auto-close','締切到達により自動確定',key);
+  if(show)showQuestResult(reward,xpInfo);
   return true;
 }
 function closeDay(){const key=activityKey(),log=dayLog(key);if(log.closed)return alert('この活動日はすでに終了しています。');finalizeDay(key,{automatic:false,show:true});save()}
@@ -387,6 +403,9 @@ function runSelfTests(){
     ok('目標達成判定',()=>{state=normalizeState({debugNow:parseLocal('2026-08-10','10:00').toISOString(),goals:{goal:65,date:'2026-09-10',current:65,maxMinutes:60}});expect(weightGoalAdjustmentInfo().achieved===true,'達成済み目標を判定できません')});
     ok('食べ過ぎコメント',()=>{expect(foodAiComment('overeat').includes('間食'),'食べ過ぎ用コメントが選ばれません')});
     ok('タスク履歴スナップショット',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;state.tasks=[{id:'b',name:'B'}];const c=completion(l);expect(c.done===1&&c.total===1,'過去日のタスク内容が現在設定に置き換わります')});
+    ok('クエスト報酬計算',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.tasks.b=true;l.workout=true;const r=questReward(l);expect(r.all&&r.xp===84&&r.gold===66&&r.grade==='S','全達成報酬が不正')});
+    ok('部分達成報酬',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;const r=questReward(l);expect(!r.all&&r.xp===12&&r.gold===8&&r.grade==='C','部分達成報酬が不正')});
+    ok('終了時の二重報酬防止',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.workout=true;expect(finalizeDay('2026-08-10',{show:false})===true,'初回確定失敗');const g=state.gold,x=state.xp;expect(finalizeDay('2026-08-10',{show:false})===false&&state.gold===g&&state.xp===x,'二重報酬が発生')});
     ok('締切後の自動確定',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','01:00').toISOString(),logs:{'2026-08-09':{tasks:{a:false},taskSnapshot:[{id:'a',name:'A'}],checkin:{condition:'普通',motivation:'普通',soreness:'なし',back:'痛くない',duration:30},workoutPlan:[],exerciseChecks:{},workout:false,closed:false}}});expect(autoFinalizeExpiredLogs()===true&&state.logs['2026-08-09'].closed===true,'古い活動日が自動確定されません')});
   }finally{
     state=normalizeState(snapshot);localStorage.setItem('questlife',JSON.stringify(state));renderAll();
@@ -471,11 +490,25 @@ function renderDebug(){
     const reason=n.date===currentCalendarKey()&&at<w.start?'当日の夜勤予定（開始前）':n.date<currentCalendarKey()&&at<w.deadline?'前日の夜勤を締切まで継続':'夜勤時間中';
     nightDetail=`夜勤判定：${reason}\n夜勤活動日：${n.date}\n夜勤開始：${w.start.toLocaleString('ja-JP')}\n夜勤終了：${w.end.toLocaleString('ja-JP')}\n夜勤締切：${w.deadline.toLocaleString('ja-JP')}`;
   }
-  if(debugSummary)debugSummary.textContent=`現在判定：${now().toLocaleString('ja-JP')}\nカレンダー日：${currentCalendarKey()}\n活動日：${activityKey()}\nモード：${mode()}\n${nightDetail}\n現在の締切：${d.date.toLocaleString('ja-JP')}\n確定済み：${log.closed?'はい':'いいえ'}\n保護期間：${state.closedCount<7?`有効（${state.closedCount}/7活動日）`:'終了'}\n負荷補正：${progression()>0?'少し増加':progression()<0?'少し軽減':'標準'}\nデータ版：${state.version}`;
+  if(debugSummary)debugSummary.textContent=`現在判定：${now().toLocaleString('ja-JP')}\nカレンダー日：${currentCalendarKey()}\n活動日：${activityKey()}\nモード：${mode()}\n${nightDetail}\n現在の締切：${d.date.toLocaleString('ja-JP')}\n確定済み：${log.closed?'はい':'いいえ'}\n冒険者：Lv.${state.level} / EXP ${state.xp}/${state.level*100} / ${state.gold}G\n負荷補正：${progression()>0?'少し増加':progression()<0?'少し軽減':'標準'}\nデータ版：${state.version}`;
   if(eventLog){const visible=state.events.filter(e=>e.type!=='lost');eventLog.innerHTML=visible.length?visible.map(e=>`<div class="event-item"><b>${esc(e.key)}</b>［${esc(e.type)}］${esc(e.text)}</div>`).join(''):'まだ処理履歴はありません。'}
 }
 
 
+
+function renderGameStatus(){
+  const log=dayLog(),q=questSummary(log),reward=questReward(log),next=state.level*100;
+  const set=(id,text)=>{const el=$(id);if(el)el.textContent=text};
+  set('#guideLevel',`Lv.${state.level}`);set('#guideXp',`${state.xp}/${next}`);set('#guideGold',`${state.gold}G`);
+  set('#guideQuestProgress',mode()==='vacation'?'休息日':`${q.questDone}/${q.questTotal}`);
+  const bar=$('#guideXpBar');if(bar)bar.style.width=`${Math.min(100,state.xp/next*100)}%`;
+  const hint=$('#guideRewardHint');if(hint){
+    if(mode()==='vacation')hint.textContent='今日は通常クエストを休止しています。';
+    else if(log.closed)hint.textContent=`本日の報酬は確定済みです。評価 ${log.result?.grade||'—'} / +${log.result?.gold||0}G`;
+    else if(q.all)hint.textContent=`全達成！終了すると +${reward.xp} EXP / +${reward.gold}G が確定します。`;
+    else hint.textContent=`現在の確定予定：+${reward.xp} EXP / +${reward.gold}G。全達成で追加ボーナス。`;
+  }
+}
 
 function renderDashboard(){
   const log=dayLog(), c=completion(log);
@@ -552,7 +585,7 @@ $('#openFoodHistory').onclick=()=>{renderFoodHistory();$('#foodHistoryEditor').h
 $$('.close-food-history').forEach(b=>b.onclick=()=>$('#foodHistoryDialog').close());
 $('#foodHistoryEditValue').onchange=()=>{$('#foodHistoryAiComment').textContent=foodAiComment($('#foodHistoryEditValue').value)};
 $('#saveFoodHistoryEdit').onclick=()=>{if(!selectedFoodHistoryKey)return;state.weeklyFood[selectedFoodHistoryKey]=$('#foodHistoryEditValue').value;addEvent('food',`過去の食生活振り返りを更新（${foodLabel(state.weeklyFood[selectedFoodHistoryKey])}）`,selectedFoodHistoryKey);save();renderFoodHistory();openFoodHistoryEditor(selectedFoodHistoryKey)};
-$('#completeWorkout').onclick=()=>{const log=dayLog();const checked=Object.values(log.exerciseChecks).filter(Boolean).length;if(checked<log.workoutPlan.length&&!confirm(`未チェックの種目が${log.workoutPlan.length-checked}件あります。完了にしますか？`))return;log.workout=true;log.workoutRpe=+$('#workoutRpe').value;gainXp(30);addEvent('workout',`運動を完了（きつさ ${log.workoutRpe}/10）`);save();alert('運動完了。きつさを保存しました。2回以上の記録から、次回メニューに具体的な増減として表示します。')};
+$('#completeWorkout').onclick=()=>{const log=dayLog();const checked=Object.values(log.exerciseChecks).filter(Boolean).length;if(checked<log.workoutPlan.length&&!confirm(`未チェックの種目が${log.workoutPlan.length-checked}件あります。完了にしますか？`))return;log.workout=true;log.workoutRpe=+$('#workoutRpe').value;addEvent('workout',`運動を完了（きつさ ${log.workoutRpe}/10）`);save();alert('運動完了。今日を終了すると、クエスト報酬としてEXPとゴールドが確定します。')};
 $('#finishDay').onclick=()=>{if(dayLog().closed)return;if(confirm('今日を終了しますか？\n今日のタスクと運動記録を確定します。'))closeDay()};$('#closeResult').onclick=()=>$('#resultDialog').close();
 $('#weightForm').onsubmit=e=>{e.preventDefault();const v=+$('#weightInput').value,key=activityKey();state.weights=weightRecords().filter(w=>w.date!==key);state.weights.push({date:key,value:v});state.weights.sort((a,b)=>a.date.localeCompare(b.date));state.goals.current=v;if($('#currentWeight'))$('#currentWeight').value=String(v);$('#weightInput').value='';addEvent('weight',`体重 ${v}kg を記録`);save()};
 $('#saveGoals').onclick=()=>{const maxMinutes=parseInt($('#maxWorkoutMinutes').value)||60;state.goals={...state.goals,current:+$('#currentWeight').value||null,goal:+$('#goalWeight').value||null,date:$('#goalDate').value,maxMinutes:Math.max(30,Math.min(60,maxMinutes)),weeklyTargets:{}};save();alert('目標を保存しました。必要ペースと体重トレンドから週間運動目標を計算します。')};
@@ -567,7 +600,7 @@ $('#saveNotifications').onclick=async()=>{
 $('#testNotification').onclick=async()=>{if('Notification'in window&&Notification.permission==='default')await Notification.requestPermission();sendNotification('QuestLife テスト','通知の表示確認です。')};
 $('#applyDebugNow').onclick=()=>{const value=$('#debugNow').value;if(!value)return alert('テスト日時を入力してください。');const d=parseDateTimeLocalValue(value);if(Number.isNaN(d.getTime()))return alert('日時を正しく入力してください。');state.debugNow=d.toISOString();autoFinalizeExpiredLogs();save()};
 $('#clearDebugNow').onclick=()=>{state.debugNow=null;$('#debugNow').value='';autoFinalizeExpiredLogs();save()};
-$('#addTestRewards').onclick=()=>{['鉄の剣','革の盾','森のスライム','見習い竜'].forEach(x=>{if(!state.inventory.includes(x))state.inventory.push(x)});state.closedCount=7;addEvent('debug','テスト用報酬を追加し、初心者保護を終了');save()};
+$('#addTestRewards').onclick=()=>{state.gold+=250;gainXp(90);addEvent('debug','RPGテスト用に250Gと90EXPを追加');save()};
 $('#resetToday').onclick=()=>{if(!confirm(`活動日 ${activityKey()} の記録を消しますか？`))return;delete state.logs[activityKey()];state.events=state.events.filter(e=>e.key!==activityKey());save()};
 if($('#runSelfTests'))$('#runSelfTests').onclick=runSelfTests;
 $('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`QuestLife-backup-${currentCalendarKey()}.json`;a.click();URL.revokeObjectURL(a.href);$('#backupStatus').textContent='バックアップを書き出しました。'};
