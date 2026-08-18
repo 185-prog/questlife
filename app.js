@@ -9,15 +9,15 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=19;
+const APP_DATA_VERSION=20;
 const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',receptionist:'blonde',receptionistDialogView:'full',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 
 // RPGの見た目と内容はここに集約。image を画像パスへ変更すれば後から差し替え可能。
 const GAME_CONTENT={
   hero:{default:{image:null,maleIcon:'⚔',femaleIcon:'⚔'}},
   receptionist:{
-    blonde:{name:'受付嬢',image:'./assets/receptionist-blonde.png',tone:'bright'},
-    brunette:{name:'受付嬢',image:'./assets/receptionist-brunette.png',tone:'soft'}
+    blonde:{name:'受付嬢',image:'./assets/receptionist-blonde.png',faceImage:'./assets/receptionist-blonde-face.png',tone:'bright'},
+    brunette:{name:'受付嬢',image:'./assets/receptionist-brunette.png',faceImage:'./assets/receptionist-brunette-face.png',tone:'soft'}
   },
   monsters:{
     'ひよこスライム':{image:null,icon:'🟢',rarity:'★',power:2,recruitPrice:0,description:'小さくて元気な最初の仲間。'},
@@ -57,15 +57,23 @@ function setReceptionistDialogView(view,{persist=false}={}){
   const visual=$('#receptionistDialogVisual');
   if(visual)visual.dataset.view=state.receptionistDialogView;
   $$('.receptionist-view-btn').forEach(btn=>btn.classList.toggle('is-active',btn.dataset.view===state.receptionistDialogView));
-  if(persist)save();
+  renderReceptionistVisual('#receptionistDialogImage','#receptionistDialogVisual',state.receptionistDialogView);
+  if(persist)localStorage.setItem('questlife',JSON.stringify(state));
+}
+function setReceptionistCharacter(kind,{persist=true}={}){
+  if(!GAME_CONTENT.receptionist?.[kind])return;
+  state.receptionist=kind;
+  $$('.receptionist-character-btn').forEach(btn=>btn.classList.toggle('is-active',btn.dataset.receptionist===kind));
+  if(persist)save();else renderAll();
 }
 function renderReceptionistVisual(imageSelector,visualSelector,view='full'){
   const img=$(imageSelector),visual=$(visualSelector),info=receptionistInfo();if(!img||!visual)return;
+  const src=view==='face'?(info?.faceImage||info?.image):info?.image;
   visual.dataset.receptionist=state.receptionist;visual.dataset.view=view;visual.classList.remove('has-receptionist-image');
-  if(!info?.image){img.removeAttribute('src');return}
+  if(!src){img.removeAttribute('src');return}
   img.onload=()=>visual.classList.add('has-receptionist-image');
   img.onerror=()=>visual.classList.remove('has-receptionist-image');
-  if(img.getAttribute('src')!==info.image)img.setAttribute('src',info.image);else if(img.complete&&img.naturalWidth)visual.classList.add('has-receptionist-image');
+  if(img.getAttribute('src')!==src)img.setAttribute('src',src);else if(img.complete&&img.naturalWidth)visual.classList.add('has-receptionist-image');
 }
 function renderReceptionist(log,c,percent){
   const info=receptionistInfo(),copy=receptionistCopy(log,c,percent);
@@ -73,6 +81,7 @@ function renderReceptionist(log,c,percent){
   if($('#todaySummary'))$('#todaySummary').textContent=copy.short;
   if($('#guideLongMessage'))$('#guideLongMessage').textContent=copy.long;
   if($('#receptionistDialogTitle'))$('#receptionistDialogTitle').textContent='受付嬢からのご案内';
+  $$('.receptionist-character-btn').forEach(btn=>btn.classList.toggle('is-active',btn.dataset.receptionist===state.receptionist));
   renderReceptionistVisual('#receptionistCardImage','#receptionistCardVisual','face');
   renderReceptionistVisual('#receptionistDialogImage','#receptionistDialogVisual',state.receptionistDialogView||'full');
   setReceptionistDialogView(state.receptionistDialogView||'full');
@@ -805,6 +814,7 @@ renderAll();
   if(finish) finish.addEventListener('click',()=>{dialog?.close();document.querySelector('#finishDay')?.click()});
   document.querySelectorAll('#guideDialog .jump-tab').forEach(b=>b.addEventListener('click',()=>dialog?.close()));
   document.querySelectorAll('.receptionist-view-btn').forEach(b=>b.addEventListener('click',()=>setReceptionistDialogView(b.dataset.view,{persist:true})));
+  document.querySelectorAll('.receptionist-character-btn').forEach(b=>b.addEventListener('click',()=>setReceptionistCharacter(b.dataset.receptionist)));
 })();
 
 // v6.1 settings hub and interactive calendar

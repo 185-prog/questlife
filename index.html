@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v8.4</small></h1>
+      <h1>QuestLife <small class="version">v8.6</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -326,9 +326,21 @@
       <span class="guide-dialog-kicker">ADVENTURER GUILD · RECEPTION</span>
       <h2 id="receptionistDialogTitle">受付嬢からのご案内</h2>
       <p id="guideLongMessage" class="receptionist-message">今日の様子を確認して、次の一歩をご案内します。</p>
-      <div class="receptionist-view-switch" id="receptionistViewSwitch" aria-label="受付嬢の表示切替">
-        <button class="receptionist-view-btn is-active" type="button" data-view="full">全身</button>
-        <button class="receptionist-view-btn" type="button" data-view="face">顔</button>
+      <div class="receptionist-control-row">
+        <div class="receptionist-switch-group">
+          <span>表示</span>
+          <div class="receptionist-view-switch" id="receptionistViewSwitch" aria-label="受付嬢の表示切替">
+            <button class="receptionist-view-btn is-active" type="button" data-view="full">全身</button>
+            <button class="receptionist-view-btn" type="button" data-view="face">顔</button>
+          </div>
+        </div>
+        <div class="receptionist-switch-group">
+          <span>受付嬢</span>
+          <div class="receptionist-character-switch" aria-label="受付嬢の切替">
+            <button class="receptionist-character-btn is-active" type="button" data-receptionist="blonde">金髪</button>
+            <button class="receptionist-character-btn" type="button" data-receptionist="brunette">茶髪</button>
+          </div>
+        </div>
       </div>
       <div class="quest-wallet">
         <div><span>LEVEL</span><b id="guideLevel">Lv.1</b></div>
