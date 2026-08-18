@@ -273,8 +273,9 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 .receptionist-visual.has-receptionist-image .receptionist-image{opacity:1}
 .receptionist-fallback{position:absolute;inset:0;transition:opacity .18s ease}
 .receptionist-visual.has-receptionist-image .receptionist-fallback{opacity:0}
-.receptionist-card-image{left:-36px;top:-13px;width:164px;height:174px;object-fit:cover;object-position:50% 8%;filter:drop-shadow(0 12px 14px rgba(29,36,105,.18))}
-.receptionist-dialog{overflow:visible}
+.receptionist-card-image{left:-23px;top:1px;width:140px;height:140px;object-fit:contain;object-position:center;filter:drop-shadow(0 12px 14px rgba(29,36,105,.18))}
+.receptionist-dialog{max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.receptionist-dialog .dialog-close{position:sticky;float:right;top:0;z-index:8;margin-bottom:-36px}
 .guide-dialog-avatar.receptionist-visual{width:196px;height:260px;margin:-8px auto 10px;overflow:hidden;border-radius:26px;background:linear-gradient(180deg,#fbfcff 0%,#f5f7ff 100%)}
 .receptionist-dialog-image{inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 12px 18px rgba(49,60,119,.16));transition:transform .18s ease,object-position .18s ease}
 #receptionistDialogVisual[data-view="face"] .receptionist-dialog-image{object-fit:cover;object-position:50% 8%;transform:scale(1.10)}
@@ -290,7 +291,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 #receptionistCardVisual[data-receptionist="brunette"]{--hair:#5a342d}
 #receptionistDialogVisual[data-receptionist="brunette"]{--hair:#5a342d}
 @media(max-width:430px){
-  .receptionist-card-image{left:-34px;top:-11px;width:156px;height:166px}
+  .receptionist-card-image{left:-23px;top:1px;width:138px;height:138px}
   .guide-dialog-avatar.receptionist-visual{width:176px;height:236px}
 }
 
