@@ -9,14 +9,19 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=16;
-const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+const APP_DATA_VERSION=17;
+const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 
 // RPGの見た目と内容はここに集約。image を画像パスへ変更すれば後から差し替え可能。
 const GAME_CONTENT={
   hero:{default:{image:null,maleIcon:'⚔',femaleIcon:'⚔'}},
   receptionist:{default:{image:null}},
-  monsters:{'ひよこスライム':{image:null,icon:'◉',rarity:'★'}},
+  monsters:{
+    'ひよこスライム':{image:null,icon:'🟢',rarity:'★',power:2,recruitPrice:0,description:'小さくて元気な最初の仲間。'},
+    'こぐまゴーレム':{image:null,icon:'🪨',rarity:'★',power:3,recruitPrice:80,description:'ころころした岩の体で前に立つ仲間。'},
+    '火花ドラゴン':{image:null,icon:'🔥',rarity:'★★',power:6,recruitPrice:160,description:'火花をまとった小さなドラゴン。'},
+    '月光の精霊':{image:null,icon:'✨',rarity:'★★',power:5,recruitPrice:140,description:'静かな光で旅を支える精霊。'}
+  },
   equipment:{
     '旅人の服':{image:null,icon:'◇',rarity:'★',slot:'armor',power:1,price:0},
     '木の剣':{image:null,icon:'🗡',rarity:'★',slot:'weapon',power:3,price:60},
@@ -27,12 +32,41 @@ const GAME_CONTENT={
 };
 const GEAR_SLOTS={weapon:'武器',armor:'防具',accessory:'アクセサリー'};
 const SHOP_CATALOG=['木の剣','革の鎧','幸運のお守り','鉄の剣'];
+const MONSTER_CATALOG=['ひよこスライム','こぐまゴーレム','火花ドラゴン','月光の精霊'];
 function gameItemInfo(type,name){return GAME_CONTENT[type]?.[name]||{image:null,icon:type==='monsters'?'◉':'◇',rarity:'★'}}
 function visualHtml(info,fallback){return info?.image?`<img src="${esc(info.image)}" alt="">`:`<span>${esc(info?.icon||fallback)}</span>`}
 function isMonsterName(name){return !!GAME_CONTENT.monsters?.[name]||/スライム|竜|ドラゴン|精霊|ゴーレム|モンスター/.test(String(name))}
 function ownedGear(){return(state.inventory||[]).filter(name=>!isMonsterName(name)&&GAME_CONTENT.equipment?.[name])}
 function gearPower(){return Object.values(state.equippedGear||{}).reduce((sum,name)=>sum+(name?toFiniteNumber(gameItemInfo('equipment',name).power)||0:0),0)}
-function adventurePower(){return Math.max(1,state.level)+gearPower()}
+function heroPower(){return Math.max(1,state.level)+gearPower()}
+function ownedMonsters(){return(state.inventory||[]).filter(isMonsterName)}
+function partyMonsters(){const owned=new Set(ownedMonsters());return(state.party||[]).filter(name=>owned.has(name)).slice(0,3)}
+function monsterPower(name){return Math.max(0,toFiniteNumber(gameItemInfo('monsters',name).power)||0)}
+function partyPower(){return partyMonsters().reduce((sum,name)=>sum+monsterPower(name),0)}
+function adventurePower(){return heroPower()+partyPower()}
+function recruitMonster(name,{record=true}={}){
+  const info=GAME_CONTENT.monsters?.[name],price=toFiniteNumber(info?.recruitPrice);
+  if(!info||price===null||price<0)return{ok:false,reason:'invalid'};
+  if((state.inventory||[]).includes(name))return{ok:false,reason:'owned'};
+  if(state.gold<price)return{ok:false,reason:'gold'};
+  state.gold-=price;state.inventory.push(name);
+  state.party=partyMonsters();
+  if(state.party.length<3)state.party.push(name);
+  if(record)addEvent('monster',`${name} が仲間になった${price?`（${price}G）`:''}`);
+  return{ok:true,price};
+}
+function addMonsterToParty(name,{record=true}={}){
+  if(!GAME_CONTENT.monsters?.[name]||!(state.inventory||[]).includes(name))return{ok:false,reason:'not-owned'};
+  state.party=partyMonsters();
+  if(state.party.includes(name))return{ok:false,reason:'already'};
+  if(state.party.length>=3)return{ok:false,reason:'full'};
+  state.party.push(name);if(record)addEvent('party',`${name} をパーティに編成`);return{ok:true};
+}
+function removeMonsterFromParty(name,{record=true}={}){
+  state.party=partyMonsters();
+  if(!state.party.includes(name))return false;
+  state.party=state.party.filter(x=>x!==name);if(record)addEvent('party',`${name} をパーティから外した`);return true
+}
 function purchaseGear(name,{record=true}={}){
   const info=GAME_CONTENT.equipment?.[name],price=toFiniteNumber(info?.price);
   if(!info||price===null||price<0)return{ok:false,reason:'invalid'};
@@ -55,12 +89,13 @@ function clearEquippedGear(slot,{record=true}={}){
 
 function normalizeState(raw={}){
   const s=Object.assign({},clone(defaults),raw||{},{version:APP_DATA_VERSION});
-  ['tasks','inventory','danger','lost','weights','nightShifts','events'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=clone(defaults[k])});
+  ['tasks','inventory','party','danger','lost','weights','nightShifts','events'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=clone(defaults[k])});
   ['logs','weeklyFood','goals'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]=clone(defaults[k])});
   s.equipment=Array.isArray(s.equipment)?s.equipment:['mat','dumbbell'];
   const rawEquipped=raw?.equippedGear;
   s.equippedGear=rawEquipped&&typeof rawEquipped==='object'&&!Array.isArray(rawEquipped)?{...clone(defaults.equippedGear),...rawEquipped}:clone(defaults.equippedGear);
   for(const slot of Object.keys(GEAR_SLOTS)){const name=s.equippedGear[slot];if(name&&(!s.inventory.includes(name)||gameItemInfo('equipment',name).slot!==slot))s.equippedGear[slot]=null}
+  s.party=[...new Set(s.party.filter(name=>s.inventory.includes(name)&&!!GAME_CONTENT.monsters?.[name]))].slice(0,3);if(!raw?.party&&s.inventory.includes('ひよこスライム'))s.party=['ひよこスライム'];
   s.level=Math.max(1,Math.floor(toFiniteNumber(s.level)||1));s.xp=Math.max(0,Math.floor(toFiniteNumber(s.xp)||0));s.gold=Math.max(0,Math.floor(toFiniteNumber(s.gold)||0));s.streak=Math.max(0,Math.floor(toFiniteNumber(s.streak)||0));
   s.notificationSettings={enabled:false,morning:'09:00',night:'21:00',lastMorning:null,lastNight:null,...(s.notificationSettings||{})};
   s.goals={...(s.goals||{})};s.goals.maxMinutes=Math.max(30,Math.min(60,+s.goals.maxMinutes||60));s.goals.weeklyTargets=s.goals.weeklyTargets&&typeof s.goals.weeklyTargets==='object'?s.goals.weeklyTargets:{};
@@ -438,7 +473,7 @@ function runSelfTests(){
   const expect=(condition,message)=>{if(!condition)throw new Error(message)};
   try{
     ok('必須UI要素',()=>{for(const id of ['today','workout','quest','record','settings','calendarGrid','goalAnalysis','debugSummary'])expect(!!$('#'+id),`#${id} がありません`) });
-    ok('クエスト画面UI',()=>{expect(!!$('#openHeroPanel')&&!!$('#openMonstersPanel')&&!!$('#openShopPanel'),'クエスト画面の入口が不足しています');expect(!!$('#shopItems')&&!!$('#heroEquipmentSlots'),'ショップ・装備UIが不足しています');expect($$('.bottom-nav button').some(b=>b.dataset.tab==='quest'),'クエストタブがありません')});
+    ok('クエスト画面UI',()=>{expect(!!$('#openHeroPanel')&&!!$('#openMonstersPanel')&&!!$('#openShopPanel'),'クエスト画面の入口が不足しています');expect(!!$('#shopItems')&&!!$('#heroEquipmentSlots')&&!!$('#monsterPartySlots')&&!!$('#monsterRecruitList'),'ショップ・装備・仲間UIが不足しています');expect($$('.bottom-nav button').some(b=>b.dataset.tab==='quest'),'クエストタブがありません')});
     ok('通常日の締切',()=>{state=normalizeState({debugNow:parseLocal('2026-08-10','10:00').toISOString()});const d=deadlineInfo().date;expect(localDateKey(d)==='2026-08-11'&&d.getHours()===0&&d.getMinutes()===0,'24:00境界が不正')});
     ok('夜勤の活動日境界',()=>{state=normalizeState({nightShifts:[{date:'2026-08-10',start:'22:00',end:'07:00',deadline:'12:00'}]});state.debugNow=parseLocal('2026-08-10','10:00').toISOString();expect(activityKey()==='2026-08-10','開始前');state.debugNow=parseLocal('2026-08-11','11:59').toISOString();expect(activityKey()==='2026-08-10','締切前');state.debugNow=parseLocal('2026-08-11','12:00').toISOString();expect(activityKey()==='2026-08-11','締切後')});
     ok('バケーション優先',()=>{state=normalizeState({nightShifts:[{date:'2026-08-10',start:'22:00',end:'07:00',deadline:'12:00'}],vacation:{start:'2026-08-11',end:'2026-08-12'}});state.debugNow=parseLocal('2026-08-11','01:00').toISOString();expect(mode()==='vacation'&&activityKey()==='2026-08-11','夜勤がバケーションより優先されています')});
@@ -452,7 +487,10 @@ function runSelfTests(){
     ok('クエスト報酬計算',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.tasks.b=true;l.workout=true;const r=questReward(l);expect(r.all&&r.xp===84&&r.gold===66&&r.grade==='S','全達成報酬が不正')});
     ok('部分達成報酬',()=>{state=normalizeState({tasks:[{id:'a',name:'A'},{id:'b',name:'B'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;const r=questReward(l);expect(!r.all&&r.xp===12&&r.gold===8&&r.grade==='C','部分達成報酬が不正')});
     ok('ショップ購入',()=>{state=normalizeState({gold:100,inventory:['旅人の服']});const r=purchaseGear('木の剣',{record:false});expect(r.ok&&state.gold===40&&state.inventory.includes('木の剣'),'購入またはゴールド減算が不正');const second=purchaseGear('木の剣',{record:false});expect(!second.ok&&state.gold===40,'同じ装備を二重購入できています')});
-    ok('装備切替',()=>{state=normalizeState({level:1,inventory:['旅人の服','木の剣'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null}});expect(setEquippedGear('木の剣',{record:false})===true&&state.equippedGear.weapon==='木の剣','武器を装備できません');expect(adventurePower()===5,'冒険力の計算が不正');clearEquippedGear('weapon',{record:false});expect(state.equippedGear.weapon===null,'装備を外せません')});
+    ok('装備切替',()=>{state=normalizeState({level:1,inventory:['旅人の服','木の剣'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:[]});expect(setEquippedGear('木の剣',{record:false})===true&&state.equippedGear.weapon==='木の剣','武器を装備できません');expect(adventurePower()===5,'冒険力の計算が不正');clearEquippedGear('weapon',{record:false});expect(state.equippedGear.weapon===null,'装備を外せません')});
+    ok('モンスター加入',()=>{state=normalizeState({gold:200,inventory:['旅人の服','ひよこスライム'],party:['ひよこスライム']});const r=recruitMonster('こぐまゴーレム',{record:false});expect(r.ok&&state.gold===120&&state.inventory.includes('こぐまゴーレム'),'仲間加入またはゴールド減算が不正');expect(state.party.includes('こぐまゴーレム'),'空き枠への自動編成が不正')});
+    ok('パーティ上限',()=>{state=normalizeState({inventory:['旅人の服','ひよこスライム','こぐまゴーレム','火花ドラゴン','月光の精霊'],party:['ひよこスライム','こぐまゴーレム','火花ドラゴン']});const r=addMonsterToParty('月光の精霊',{record:false});expect(!r.ok&&r.reason==='full'&&state.party.length===3,'パーティ3体上限が不正')});
+    ok('総合冒険力',()=>{state=normalizeState({level:2,inventory:['旅人の服','木の剣','ひよこスライム','火花ドラゴン'],equippedGear:{weapon:'木の剣',armor:'旅人の服',accessory:null},party:['ひよこスライム','火花ドラゴン']});expect(heroPower()===6&&partyPower()===8&&adventurePower()===14,'主人公・仲間の冒険力合算が不正')});
     ok('終了時の二重報酬防止',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','10:00').toISOString()});const l=dayLog();l.tasks.a=true;l.workout=true;expect(finalizeDay('2026-08-10',{show:false})===true,'初回確定失敗');const g=state.gold,x=state.xp;expect(finalizeDay('2026-08-10',{show:false})===false&&state.gold===g&&state.xp===x,'二重報酬が発生')});
     ok('締切後の自動確定',()=>{state=normalizeState({tasks:[{id:'a',name:'A'}],debugNow:parseLocal('2026-08-10','01:00').toISOString(),logs:{'2026-08-09':{tasks:{a:false},taskSnapshot:[{id:'a',name:'A'}],checkin:{condition:'普通',motivation:'普通',soreness:'なし',back:'痛くない',duration:30},workoutPlan:[],exerciseChecks:{},workout:false,closed:false}}});expect(autoFinalizeExpiredLogs()===true&&state.logs['2026-08-09'].closed===true,'古い活動日が自動確定されません')});
   }finally{
@@ -563,14 +601,14 @@ function renderQuestHub(){
   const log=dayLog(),q=questSummary(log),reward=questReward(log),next=state.level*100;
   const heroName=state.level>=10?'王国の守護者':state.level>=5?'ギルドの剣士':'名もなき旅人';
   const pct=Math.min(100,state.xp/next*100);
-  const monsters=(state.inventory||[]).filter(isMonsterName),gear=ownedGear();
+  const monsters=ownedMonsters(),party=partyMonsters(),gear=ownedGear();
   const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
   set('#questGold',`${state.gold}G`);set('#questHeroName',heroName);set('#questHeroLevel',`Lv.${state.level}`);set('#questHeroXp',`EXP ${state.xp}/${next}`);
-  set('#questMonsterSummary',monsters.length?`${monsters.length}体の仲間`:'仲間はまだいません');set('#questShopSummary',`${SHOP_CATALOG.length}商品 / ${state.gold}G`);
+  set('#questMonsterSummary',monsters.length?`${monsters.length}体 / 編成${party.length}体`:'仲間はまだいません');set('#questShopSummary',`${SHOP_CATALOG.length}商品 / ${state.gold}G`);set('#questPartyPower',`総合冒険力 ${adventurePower()}`);
   set('#questDailyProgress',mode()==='vacation'?'休息日':`${q.questDone}/${q.questTotal}`);set('#questDailyReward',log.closed?`確定 +${log.result?.xp||0} EXP / +${log.result?.gold||0}G`:`+${reward.xp} EXP / +${reward.gold}G`);set('#questDailyGrade',log.closed?`評価 ${log.result?.grade||'—'}`:q.all?'全達成':'進行中');
   const hp=$('#questHeroXpBar');if(hp)hp.style.width=`${pct}%`;const dp=$('#questDailyBar');if(dp)dp.style.width=`${q.questTotal?Math.round(q.questDone/q.questTotal*100):0}%`;
   const heroVisual=GAME_CONTENT.hero.default;for(const id of ['#questHeroVisual','#heroDialogVisual']){const e=$(id);if(e)e.innerHTML=visualHtml(heroVisual,'⚔')}
-  set('#heroDialogName',heroName);set('#heroDialogLevel',`Lv.${state.level}`);set('#heroDialogXp',`${state.xp}/${next}`);set('#heroDialogPower',String(adventurePower()));set('#heroDialogGold',`${state.gold}G`);set('#heroGearPower',`装備力 +${gearPower()}`);set('#heroOwnedGearCount',`${gear.length}個`);set('#shopGold',`${state.gold}G`);
+  set('#heroDialogName',heroName);set('#heroDialogLevel',`Lv.${state.level}`);set('#heroDialogXp',`${state.xp}/${next}`);set('#heroDialogPower',String(heroPower()));set('#heroDialogGold',`${state.gold}G`);set('#heroGearPower',`装備力 +${gearPower()}`);set('#heroOwnedGearCount',`${gear.length}個`);set('#shopGold',`${state.gold}G`);set('#monsterPartyCount',`${party.length}/3`);set('#monsterPartyPower',`仲間力 +${partyPower()}`);
 
   const slots=$('#heroEquipmentSlots');
   if(slots){
@@ -587,7 +625,13 @@ function renderQuestHub(){
     equip.querySelectorAll('.equip-gear').forEach(b=>b.onclick=()=>{if(setEquippedGear(b.dataset.gear))save()});
   }
 
-  const coll=$('#monsterCollection');if(coll)coll.innerHTML=monsters.length?monsters.map(name=>{const info=gameItemInfo('monsters',name);return `<div class="quest-item"><div class="quest-item-visual">${visualHtml(info,'◉')}</div><div><b>${esc(name)}</b><span>${esc(info.rarity||'★')} 仲間モンスター</span></div></div>`}).join(''):'<div class="quest-empty">仲間モンスターはまだいません。</div>';
+  const preview=$('#questPartyPreview');if(preview)preview.innerHTML=party.length?party.map(name=>{const info=gameItemInfo('monsters',name);return `<div class="party-preview-unit"><div class="quest-item-visual">${visualHtml(info,'◉')}</div><span>${esc(name)}</span><b>+${monsterPower(name)}</b></div>`}).join(''):'<div class="quest-empty">仲間を編成するとここに表示されます。</div>';
+  const monsterSlots=$('#monsterPartySlots');if(monsterSlots)monsterSlots.innerHTML=[0,1,2].map(i=>{const name=party[i],info=name?gameItemInfo('monsters',name):null;return `<div class="monster-party-slot ${name?'is-filled':''}"><span class="party-slot-number">${i+1}</span>${name?`<div class="quest-item-visual">${visualHtml(info,'◉')}</div><div class="party-slot-copy"><b>${esc(name)}</b><span>${esc(info.rarity||'★')} / 冒険力 +${monsterPower(name)}</span></div><button type="button" class="small-btn remove-party-monster" data-monster="${esc(name)}">外す</button>`:`<div class="party-slot-empty">空き枠</div>`}</div>`}).join('');
+  const coll=$('#monsterCollection');if(coll)coll.innerHTML=monsters.length?monsters.map(name=>{const info=gameItemInfo('monsters',name),inParty=party.includes(name);return `<div class="quest-item monster-owned-item"><div class="quest-item-visual">${visualHtml(info,'◉')}</div><div class="quest-item-main"><b>${esc(name)}</b><span>${esc(info.rarity||'★')} / 冒険力 +${monsterPower(name)}</span><small>${esc(info.description||'仲間モンスター')}</small></div><button class="small-btn ${inParty?'remove-party-monster':'add-party-monster'}" data-monster="${esc(name)}" type="button" ${!inParty&&party.length>=3?'disabled':''}>${inParty?'外す':party.length>=3?'満員':'編成'}</button></div>`}).join(''):'<div class="quest-empty">仲間モンスターはまだいません。</div>';
+  const recruit=$('#monsterRecruitList');if(recruit)recruit.innerHTML=MONSTER_CATALOG.filter(name=>!monsters.includes(name)).map(name=>{const info=gameItemInfo('monsters',name),price=info.recruitPrice||0,afford=state.gold>=price;return `<div class="monster-recruit-card"><div class="quest-item-visual">${visualHtml(info,'◉')}</div><div class="quest-item-main"><b>${esc(name)}</b><span>${esc(info.rarity||'★')} / 冒険力 +${monsterPower(name)}</span><small>${esc(info.description||'')}</small></div><button class="shop-action recruit-monster" type="button" data-monster="${esc(name)}" ${afford?'':'disabled'}>${afford?`${price}Gで仲間に`:'G不足'}</button></div>`}).join('')||'<div class="quest-empty">テスト用の仲間は全員加入済みです。</div>';
+  document.querySelectorAll('.add-party-monster').forEach(b=>b.onclick=()=>{const r=addMonsterToParty(b.dataset.monster);if(!r.ok){alert(r.reason==='full'?'パーティは3体までです。':'編成できません。');return}save()});
+  document.querySelectorAll('.remove-party-monster').forEach(b=>b.onclick=()=>{if(removeMonsterFromParty(b.dataset.monster))save()});
+  document.querySelectorAll('.recruit-monster').forEach(b=>b.onclick=()=>{const name=b.dataset.monster,info=gameItemInfo('monsters',name);if(!confirm(`${name} を ${info.recruitPrice||0}G で仲間にしますか？`))return;const r=recruitMonster(name);if(!r.ok){alert(r.reason==='gold'?'ゴールドが足りません。':'仲間にできません。');return}save()});
 
   const shop=$('#shopItems');
   if(shop){

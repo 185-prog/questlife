@@ -264,3 +264,35 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 .shop-action{width:100%;margin-top:11px;border:0;border-radius:12px;padding:10px 12px;background:var(--accent);color:#fff;font-weight:850;font-size:12px}
 .shop-action:disabled{background:#eceef4;color:#9da4b2}
 @media(max-width:390px){.quest-dialog-stats{grid-template-columns:repeat(2,1fr)}.gear-slot-row{grid-template-columns:54px 1fr auto}.gear-owned-item{grid-template-columns:46px minmax(0,1fr) auto}.gear-owned-item .quest-item-visual{width:46px;height:46px}.shop-item-top{grid-template-columns:46px minmax(0,1fr) auto}.shop-item-top .quest-item-visual{width:46px;height:46px}}
+
+
+/* v8.3 companion monster foundation */
+.quest-party-card{padding:16px;margin-bottom:14px}
+.quest-party-card .section-title h2{margin:0}.quest-party-card .section-title>strong{font-size:11px;color:#579468;background:#eff8ef;padding:7px 9px;border-radius:999px}
+.party-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+.party-preview-unit{min-width:0;padding:10px 6px;border-radius:16px;background:#f7f9f7;text-align:center}
+.party-preview-unit .quest-item-visual{width:50px;height:50px;margin:0 auto 7px}
+.party-preview-unit span{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.party-preview-unit b{display:block;font-size:10px;color:#579468;margin-top:3px}
+.monster-party-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.monster-party-summary>div{background:#f7f8fc;border-radius:14px;padding:10px;text-align:center}
+.monster-party-summary span{display:block;font-size:9px;color:var(--muted);font-weight:800}.monster-party-summary b{font-size:14px}
+.monster-party-slots{display:grid;gap:8px;margin-bottom:16px}
+.monster-party-slot{display:grid;grid-template-columns:26px 48px 1fr auto;align-items:center;gap:9px;min-height:62px;padding:8px 10px;border:1px dashed #d7dae6;border-radius:16px;background:#fafbfc}
+.monster-party-slot.is-filled{border-style:solid;background:#fff}
+.monster-party-slot .quest-item-visual{width:48px;height:48px}
+.party-slot-number{display:grid;place-items:center;width:22px;height:22px;border-radius:999px;background:#eef0f7;color:var(--muted);font-size:10px;font-weight:850}
+.party-slot-copy{min-width:0}.party-slot-copy b{display:block;font-size:13px}.party-slot-copy span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.party-slot-empty{grid-column:2/5;color:var(--muted);font-size:12px}
+.monster-owned-item{grid-template-columns:52px minmax(0,1fr) auto}
+.quest-item-main small{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
+.monster-recruit-list{display:grid;gap:10px}
+.monster-recruit-card{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.monster-recruit-card .quest-item-visual{width:52px;height:52px}
+@media(max-width:390px){
+  .monster-party-slot{grid-template-columns:22px 42px 1fr auto;gap:7px;padding:8px}
+  .monster-party-slot .quest-item-visual{width:42px;height:42px}
+  .monster-owned-item,.monster-recruit-card{grid-template-columns:44px minmax(0,1fr) auto}
+  .monster-owned-item .quest-item-visual,.monster-recruit-card .quest-item-visual{width:44px;height:44px}
+  .monster-recruit-card .shop-action{font-size:10px;padding:8px 9px}
+}
