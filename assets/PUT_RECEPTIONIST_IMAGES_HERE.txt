@@ -1,0 +1,6 @@
+このフォルダに最終受付嬢画像を次の名前で置いてください。
+
+receptionist-blonde.png  … 金髪受付嬢
+receptionist-brunette.png … 茶髪受付嬢
+
+推奨: 背景透過PNG。画像が無い場合は従来の簡易アバターが自動表示されます。

@@ -9,13 +9,16 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=17;
-const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+const APP_DATA_VERSION=18;
+const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',receptionist:'blonde',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 
 // RPGの見た目と内容はここに集約。image を画像パスへ変更すれば後から差し替え可能。
 const GAME_CONTENT={
   hero:{default:{image:null,maleIcon:'⚔',femaleIcon:'⚔'}},
-  receptionist:{default:{image:null}},
+  receptionist:{
+    blonde:{name:'受付嬢',image:'./assets/receptionist-blonde.png',tone:'bright'},
+    brunette:{name:'受付嬢',image:'./assets/receptionist-brunette.png',tone:'soft'}
+  },
   monsters:{
     'ひよこスライム':{image:null,icon:'🟢',rarity:'★',power:2,recruitPrice:0,description:'小さくて元気な最初の仲間。'},
     'こぐまゴーレム':{image:null,icon:'🪨',rarity:'★',power:3,recruitPrice:80,description:'ころころした岩の体で前に立つ仲間。'},
@@ -35,6 +38,37 @@ const SHOP_CATALOG=['木の剣','革の鎧','幸運のお守り','鉄の剣'];
 const MONSTER_CATALOG=['ひよこスライム','こぐまゴーレム','火花ドラゴン','月光の精霊'];
 function gameItemInfo(type,name){return GAME_CONTENT[type]?.[name]||{image:null,icon:type==='monsters'?'◉':'◇',rarity:'★'}}
 function visualHtml(info,fallback){return info?.image?`<img src="${esc(info.image)}" alt="">`:`<span>${esc(info?.icon||fallback)}</span>`}
+function receptionistInfo(){return GAME_CONTENT.receptionist?.[state.receptionist]||GAME_CONTENT.receptionist.blonde}
+function receptionistGreeting(){const h=now().getHours();return h<11?'おはようございます':h<18?'こんにちは':'お疲れさまです'}
+function receptionistCopy(log,c,percent){
+  const info=receptionistInfo(),soft=info?.tone==='soft',greet=receptionistGreeting(),taskTotal=c.total;
+  if(mode()==='vacation')return{short:'今日は冒険をお休みして、旅を楽しみましょう。',long:soft?'今日はギルドの依頼もお休みです。帰ってきたら、また一緒に続きを始めましょうね。':'今日は通常依頼はお休みです！しっかり楽しんで、帰ってきたらまた冒険を再開しましょう。'};
+  if(log.closed)return{short:'今日の冒険は確定済みです。ゆっくり休みましょう。',long:soft?'今日もお疲れさまでした。もう十分頑張りましたよ。次の活動日に備えて、ゆっくり休んでくださいね。':'今日もお疲れさまでした！本日の冒険は無事に確定しています。次に備えて、今日はしっかり休みましょう！'};
+  if(mode()==='night')return{short:'夜勤日です。無理せず、できる依頼から進めましょう。',long:soft?`${greet}。今日は夜勤日ですね。締切はいつもと違うので、焦らずできるものから進めてください。`:`${greet}！今日は夜勤日です。いつもの24時締切ではありません。無理せず、まずは一つだけ片づけましょう！`};
+  if(taskTotal===0)return{short:'最初に毎日のタスクを登録しましょう。',long:soft?`${greet}。毎日の依頼がまだ登録されていません。設定から一つだけ登録してみませんか？`:`${greet}！まずは毎日の依頼を一つ登録しましょう。最初からたくさん作らなくて大丈夫です！`};
+  if(c.done===taskTotal&&log.workout)return{short:'本日の依頼、すべて達成です！',long:soft?'すべての依頼と運動が終わっています。今日は完璧です。あとは「今日を終了する」で冒険を確定できますよ。':'すべて達成です！タスクも運動も完了しました。あとは「今日を終了する」で報酬を確定しましょう！'};
+  if(c.done===taskTotal)return{short:'タスクは全達成です。あとは運動だけ！',long:soft?'毎日の依頼は全部終わりました。とてもいいペースです。余力があれば、今日の運動も確認してみましょう。':'毎日の依頼は全達成です！あとは今日の運動を終えれば、最高の結果を狙えます！'};
+  if(c.done===0)return{short:'まず1件だけ。最初のクエストを終わらせましょう。',long:soft?`${greet}。まだ始まったばかりです。全部を見なくて大丈夫なので、いちばん小さい依頼を一つだけ終わらせましょう。`:`${greet}！まずは1件だけでOKです。最初のクエストを終わらせて、勢いをつけましょう！`};
+  if(percent>=50)return{short:`${c.done}/${taskTotal}件完了。いいペースです！`,long:soft?`もう${c.done}/${taskTotal}件まで進んでいます。ここまで来たら、次の一つだけに集中すれば大丈夫ですよ。`:`${c.done}/${taskTotal}件完了です！いいペースですよ。このまま次の一つを片づけましょう！`};
+  return{short:`${c.done}/${taskTotal}件完了。次の一歩を進めましょう。`,long:soft?`今日は${c.done}/${taskTotal}件完了しています。焦らず、次に終わらせやすい依頼を一つ選びましょう。`:`今日は${c.done}/${taskTotal}件完了しています！次に終わらせやすい依頼を一つ選んで進めましょう。`};
+}
+function renderReceptionistVisual(imageSelector,visualSelector){
+  const img=$(imageSelector),visual=$(visualSelector),info=receptionistInfo();if(!img||!visual)return;
+  visual.dataset.receptionist=state.receptionist;visual.classList.remove('has-receptionist-image');
+  if(!info?.image){img.removeAttribute('src');return}
+  img.onload=()=>visual.classList.add('has-receptionist-image');
+  img.onerror=()=>visual.classList.remove('has-receptionist-image');
+  if(img.getAttribute('src')!==info.image)img.setAttribute('src',info.image);else if(img.complete&&img.naturalWidth)visual.classList.add('has-receptionist-image');
+}
+function renderReceptionist(log,c,percent){
+  const info=receptionistInfo(),copy=receptionistCopy(log,c,percent);
+  if($('#receptionistCardLabel'))$('#receptionistCardLabel').textContent=info?.name||'受付嬢';
+  if($('#todaySummary'))$('#todaySummary').textContent=copy.short;
+  if($('#guideLongMessage'))$('#guideLongMessage').textContent=copy.long;
+  if($('#receptionistDialogTitle'))$('#receptionistDialogTitle').textContent='受付嬢からのご案内';
+  renderReceptionistVisual('#receptionistCardImage','#receptionistCardVisual');
+  renderReceptionistVisual('#receptionistDialogImage','#receptionistDialogVisual');
+}
 function isMonsterName(name){return !!GAME_CONTENT.monsters?.[name]||/スライム|竜|ドラゴン|精霊|ゴーレム|モンスター/.test(String(name))}
 function ownedGear(){return(state.inventory||[]).filter(name=>!isMonsterName(name)&&GAME_CONTENT.equipment?.[name])}
 function gearPower(){return Object.values(state.equippedGear||{}).reduce((sum,name)=>sum+(name?toFiniteNumber(gameItemInfo('equipment',name).power)||0:0),0)}
@@ -92,6 +126,7 @@ function normalizeState(raw={}){
   ['tasks','inventory','party','danger','lost','weights','nightShifts','events'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=clone(defaults[k])});
   ['logs','weeklyFood','goals'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]=clone(defaults[k])});
   s.equipment=Array.isArray(s.equipment)?s.equipment:['mat','dumbbell'];
+  s.receptionist=GAME_CONTENT.receptionist?.[s.receptionist]?s.receptionist:'blonde';
   const rawEquipped=raw?.equippedGear;
   s.equippedGear=rawEquipped&&typeof rawEquipped==='object'&&!Array.isArray(rawEquipped)?{...clone(defaults.equippedGear),...rawEquipped}:clone(defaults.equippedGear);
   for(const slot of Object.keys(GEAR_SLOTS)){const name=s.equippedGear[slot];if(name&&(!s.inventory.includes(name)||gameItemInfo('equipment',name).slot!==slot))s.equippedGear[slot]=null}
@@ -655,7 +690,7 @@ function renderDashboard(){
   const finishButton=$('#finishDay');if(finishButton){finishButton.hidden=false;finishButton.disabled=!!log.closed;finishButton.textContent=log.closed?'今日の記録は確定済み':'今日を終了する'}const finishCaption=$('#finishDayCaption');if(finishCaption)finishCaption.textContent=log.closed?'この活動日の記録は確定されています':'今日の記録を確定します';
   if($('#dayRing'))$('#dayRing').style.setProperty('--progress',`${percent}%`); if($('#guideProgressBar'))$('#guideProgressBar').style.width=`${percent}%`; if($('#homeStreakCount'))$('#homeStreakCount').textContent=state.streak||0;
   if($('#todayHeading'))$('#todayHeading').textContent=log.closed?'今日の記録は確定済み':percent===100?'今日の予定を達成しました':percent>=50?'あと少しです':'今日を整える';
-  if($('#todaySummary'))$('#todaySummary').textContent=log.closed?'今日の記録は確定済みです。ゆっくり休みましょう。':taskTotal===0?'最初に毎日のタスクを登録しましょう。':c.done===0?'まず1つだけ終わらせましょう。':c.done===taskTotal&&log.workout?'今日の予定はすべて完了しました。':`${c.done}/${taskTotal}件完了。次の一歩を進めましょう。`; if($('#guideLongMessage'))$('#guideLongMessage').textContent=log.closed?'今日もお疲れさまでした。次の活動日に備えて、今夜はしっかり休みましょう。':taskTotal===0?'毎日のタスクを登録すると、今日の案内を始められます。':c.done===taskTotal&&log.workout?'今日の予定はすべて完了しています。最後までやり切りましたね。':`今日はタスクが${c.done}/${taskTotal}件完了しています。焦らず、次の一つに集中しましょう。`; 
+  renderReceptionist(log,c,percent);
   if($('#todayWorkoutBadge'))$('#todayWorkoutBadge').textContent=log.workout?'完了':log.workoutPlan.length?'提案済み':'未生成';
   if($('#todayWorkoutSummary')){
     if(log.workout)$('#todayWorkoutSummary').textContent=`完了済み・きつさ ${log.workoutRpe||6}/10`;

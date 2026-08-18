@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v8.3</small></h1>
+      <h1>QuestLife <small class="version">v8.4</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -34,15 +34,18 @@
 
       <button class="guide-card" id="openGuide" type="button" aria-haspopup="dialog" aria-controls="guideDialog">
         <div class="guide-copy">
-          <span class="guide-label">今日のクエスト</span>
+          <span class="guide-label" id="receptionistCardLabel">受付嬢</span>
           <strong class="guide-percent" id="dayPercent">0%</strong>
           <div class="guide-progress" aria-hidden="true"><span id="guideProgressBar"></span></div>
           <p id="todaySummary">まず1つだけ終わらせましょう。</p>
         </div>
-        <div class="guide-avatar" aria-hidden="true">
-          <div class="avatar-hair"></div>
-          <div class="avatar-face"></div>
-          <div class="avatar-body"></div>
+        <div class="guide-avatar receptionist-visual" id="receptionistCardVisual" aria-hidden="true">
+          <img id="receptionistCardImage" class="receptionist-image receptionist-card-image" alt="" />
+          <div class="receptionist-fallback">
+            <div class="avatar-hair"></div>
+            <div class="avatar-face"></div>
+            <div class="avatar-body"></div>
+          </div>
         </div>
         <span class="guide-chevron" aria-hidden="true">›</span>
       </button>
@@ -311,14 +314,18 @@
     <div id="shopItems" class="quest-shop-list"></div>
   </dialog>
 
-  <dialog id="guideDialog" class="guide-dialog">
+  <dialog id="guideDialog" class="guide-dialog receptionist-dialog">
     <button id="closeGuide" class="dialog-close" type="button" aria-label="閉じる">×</button>
-    <div class="guide-dialog-avatar" aria-hidden="true">
-      <div class="avatar-hair"></div><div class="avatar-face"></div><div class="avatar-body"></div>
+    <div class="guide-dialog-avatar receptionist-visual" id="receptionistDialogVisual" aria-hidden="true">
+      <img id="receptionistDialogImage" class="receptionist-image receptionist-dialog-image" alt="" />
+      <div class="receptionist-fallback">
+        <div class="avatar-hair"></div><div class="avatar-face"></div><div class="avatar-body"></div>
+      </div>
     </div>
     <div class="guide-dialog-copy">
-      <span class="guide-dialog-kicker">ADVENTURER GUILD</span>
-      <h2>今日のクエスト</h2>
+      <span class="guide-dialog-kicker">ADVENTURER GUILD · RECEPTION</span>
+      <h2 id="receptionistDialogTitle">受付嬢からのご案内</h2>
+      <p id="guideLongMessage" class="receptionist-message">今日の様子を確認して、次の一歩をご案内します。</p>
       <div class="quest-wallet">
         <div><span>LEVEL</span><b id="guideLevel">Lv.1</b></div>
         <div><span>EXP</span><b id="guideXp">0/100</b></div>
