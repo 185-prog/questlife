@@ -9,8 +9,8 @@ const newId=()=>globalThis.crypto?.randomUUID?.()||`ql-${Date.now().toString(36)
 const toDateTimeLocalValue=d=>`${localDateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTimeLocalValue=v=>{const [date,time='00:00']=String(v||'').split('T');return parseLocal(date,time)};
 
-const APP_DATA_VERSION=18;
-const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',receptionist:'blonde',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
+const APP_DATA_VERSION=19;
+const defaults={version:APP_DATA_VERSION,tasks:[],logs:{},weeklyFood:{},xp:0,level:1,gold:0,streak:0,inventory:['旅人の服','ひよこスライム'],equippedGear:{weapon:null,armor:'旅人の服',accessory:null},party:['ひよこスライム'],danger:[],lost:[],weights:[],goals:{},equipment:['mat','dumbbell'],nightShifts:[],vacation:null,gender:'male',receptionist:'blonde',receptionistDialogView:'full',lastClosed:null,firstClosedDate:null,closedCount:0,events:[],debugNow:null};
 
 // RPGの見た目と内容はここに集約。image を画像パスへ変更すれば後から差し替え可能。
 const GAME_CONTENT={
@@ -52,9 +52,16 @@ function receptionistCopy(log,c,percent){
   if(percent>=50)return{short:`${c.done}/${taskTotal}件完了。いいペースです！`,long:soft?`もう${c.done}/${taskTotal}件まで進んでいます。ここまで来たら、次の一つだけに集中すれば大丈夫ですよ。`:`${c.done}/${taskTotal}件完了です！いいペースですよ。このまま次の一つを片づけましょう！`};
   return{short:`${c.done}/${taskTotal}件完了。次の一歩を進めましょう。`,long:soft?`今日は${c.done}/${taskTotal}件完了しています。焦らず、次に終わらせやすい依頼を一つ選びましょう。`:`今日は${c.done}/${taskTotal}件完了しています！次に終わらせやすい依頼を一つ選んで進めましょう。`};
 }
-function renderReceptionistVisual(imageSelector,visualSelector){
+function setReceptionistDialogView(view,{persist=false}={}){
+  state.receptionistDialogView=view==='face'?'face':'full';
+  const visual=$('#receptionistDialogVisual');
+  if(visual)visual.dataset.view=state.receptionistDialogView;
+  $$('.receptionist-view-btn').forEach(btn=>btn.classList.toggle('is-active',btn.dataset.view===state.receptionistDialogView));
+  if(persist)save();
+}
+function renderReceptionistVisual(imageSelector,visualSelector,view='full'){
   const img=$(imageSelector),visual=$(visualSelector),info=receptionistInfo();if(!img||!visual)return;
-  visual.dataset.receptionist=state.receptionist;visual.classList.remove('has-receptionist-image');
+  visual.dataset.receptionist=state.receptionist;visual.dataset.view=view;visual.classList.remove('has-receptionist-image');
   if(!info?.image){img.removeAttribute('src');return}
   img.onload=()=>visual.classList.add('has-receptionist-image');
   img.onerror=()=>visual.classList.remove('has-receptionist-image');
@@ -66,8 +73,9 @@ function renderReceptionist(log,c,percent){
   if($('#todaySummary'))$('#todaySummary').textContent=copy.short;
   if($('#guideLongMessage'))$('#guideLongMessage').textContent=copy.long;
   if($('#receptionistDialogTitle'))$('#receptionistDialogTitle').textContent='受付嬢からのご案内';
-  renderReceptionistVisual('#receptionistCardImage','#receptionistCardVisual');
-  renderReceptionistVisual('#receptionistDialogImage','#receptionistDialogVisual');
+  renderReceptionistVisual('#receptionistCardImage','#receptionistCardVisual','face');
+  renderReceptionistVisual('#receptionistDialogImage','#receptionistDialogVisual',state.receptionistDialogView||'full');
+  setReceptionistDialogView(state.receptionistDialogView||'full');
 }
 function isMonsterName(name){return !!GAME_CONTENT.monsters?.[name]||/スライム|竜|ドラゴン|精霊|ゴーレム|モンスター/.test(String(name))}
 function ownedGear(){return(state.inventory||[]).filter(name=>!isMonsterName(name)&&GAME_CONTENT.equipment?.[name])}
@@ -127,6 +135,7 @@ function normalizeState(raw={}){
   ['logs','weeklyFood','goals'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]=clone(defaults[k])});
   s.equipment=Array.isArray(s.equipment)?s.equipment:['mat','dumbbell'];
   s.receptionist=GAME_CONTENT.receptionist?.[s.receptionist]?s.receptionist:'blonde';
+  s.receptionistDialogView=s.receptionistDialogView==='face'?'face':'full';
   const rawEquipped=raw?.equippedGear;
   s.equippedGear=rawEquipped&&typeof rawEquipped==='object'&&!Array.isArray(rawEquipped)?{...clone(defaults.equippedGear),...rawEquipped}:clone(defaults.equippedGear);
   for(const slot of Object.keys(GEAR_SLOTS)){const name=s.equippedGear[slot];if(name&&(!s.inventory.includes(name)||gameItemInfo('equipment',name).slot!==slot))s.equippedGear[slot]=null}
@@ -789,12 +798,13 @@ renderAll();
 // v6 guide card interactions
 (()=>{
   const open=document.querySelector('#openGuide'), dialog=document.querySelector('#guideDialog'), close=document.querySelector('#closeGuide');
-  if(open&&dialog) open.addEventListener('click',()=>dialog.showModal());
+  if(open&&dialog) open.addEventListener('click',()=>{setReceptionistDialogView(state.receptionistDialogView||'full');dialog.showModal()});
   if(close&&dialog) close.addEventListener('click',()=>dialog.close());
   if(dialog) dialog.addEventListener('click',e=>{if(e.target===dialog) dialog.close()});
   const finish=document.querySelector('#guideFinishDay');
   if(finish) finish.addEventListener('click',()=>{dialog?.close();document.querySelector('#finishDay')?.click()});
   document.querySelectorAll('#guideDialog .jump-tab').forEach(b=>b.addEventListener('click',()=>dialog?.close()));
+  document.querySelectorAll('.receptionist-view-btn').forEach(b=>b.addEventListener('click',()=>setReceptionistDialogView(b.dataset.view,{persist:true})));
 })();
 
 // v6.1 settings hub and interactive calendar
