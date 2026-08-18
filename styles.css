@@ -237,7 +237,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 .quest-page-xp{height:6px;margin:10px 0 0;background:rgba(255,255,255,.18)}.quest-page-xp span{background:#fff}.quest-card-chevron{font-size:26px;color:rgba(255,255,255,.75)}
 .quest-hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px}.quest-hub-card{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:10px;min-height:100px;text-align:left;padding:14px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow);color:var(--text)}
 .quest-hub-card>div:nth-child(2){min-width:0}.quest-hub-card span{display:block;font-size:9px;letter-spacing:.08em;color:var(--muted);font-weight:800}.quest-hub-card h3{font-size:16px;margin:2px 0 4px}.quest-hub-card p{font-size:11px;color:var(--muted);margin:0}.quest-hub-card>b{font-size:20px;color:#a0a7b6}
-.quest-hub-icon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:23px;font-weight:900}.monster-hub-icon{background:#eff8ef;color:#579468}.shop-hub-icon{background:#fff4df;color:#a8751e}
+.quest-hub-icon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:23px;font-weight:900}.shop-hub-icon{background:#fff4df;color:#a8751e}
 .quest-daily-card{padding:17px}.quest-daily-card .section-title h2{margin:0}.quest-daily-card .section-title>strong{font-size:12px;color:var(--accent);background:var(--accent2);padding:7px 9px;border-radius:999px}.quest-daily-progress{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.quest-daily-progress>div{padding:11px;border-radius:14px;background:#f7f8fc}.quest-daily-progress span{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.quest-daily-progress b{font-size:14px}.quest-daily-bar{height:6px;margin:13px 0 0;background:#e9ebf5}.quest-daily-bar span{background:var(--accent)}
 .quest-detail-dialog{width:min(92vw,440px);max-height:min(84vh,720px);overflow:auto;padding:24px}.quest-detail-dialog .dialog-close{float:right}.quest-detail-visual{width:118px;height:140px;margin:9px auto 15px;border-radius:26px;display:grid;place-items:center;background:linear-gradient(145deg,#eef0ff,#f8f9ff);border:1px solid #dfe3f7;overflow:hidden}.quest-detail-visual span{font-size:52px}.quest-detail-dialog>h2{font-size:24px;text-align:center;margin-bottom:16px}.quest-dialog-kicker{text-align:center}
 .quest-dialog-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:19px}.quest-dialog-stats>div{background:#f7f8fc;border-radius:14px;padding:11px;text-align:center}.quest-dialog-stats span{display:block;font-size:9px;color:var(--muted);font-weight:800}.quest-dialog-stats b{font-size:14px}.quest-subsection{border-top:1px solid var(--line);padding-top:16px}.quest-subsection h3{margin:0}.quest-collection{display:grid;gap:10px}.quest-item{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:16px;background:#fff}.quest-item-visual{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:#f3f5fb;font-size:25px;overflow:hidden}.quest-item span{font-size:11px;color:var(--muted)}.quest-item b{display:block;font-size:14px;margin-bottom:3px}.quest-empty{padding:18px;border-radius:16px;background:#f7f8fc;text-align:center;color:var(--muted);font-size:13px}.quest-shop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.quest-shop-head h2{margin:0}.quest-shop-head strong{padding:8px 11px;border-radius:999px;background:#fff4df;color:#9b6b17}.quest-shop-placeholder{text-align:center;padding:27px 16px;background:#f8f9fc;border-radius:20px}.quest-shop-placeholder .quest-hub-icon{margin:0 auto 12px}.quest-shop-placeholder h3{margin-bottom:7px}.quest-shop-placeholder p{font-size:13px;color:var(--muted);margin:0}
@@ -265,37 +265,6 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 .shop-action:disabled{background:#eceef4;color:#9da4b2}
 @media(max-width:390px){.quest-dialog-stats{grid-template-columns:repeat(2,1fr)}.gear-slot-row{grid-template-columns:54px 1fr auto}.gear-owned-item{grid-template-columns:46px minmax(0,1fr) auto}.gear-owned-item .quest-item-visual{width:46px;height:46px}.shop-item-top{grid-template-columns:46px minmax(0,1fr) auto}.shop-item-top .quest-item-visual{width:46px;height:46px}}
 
-
-/* v8.3 companion monster foundation */
-.quest-party-card{padding:16px;margin-bottom:14px}
-.quest-party-card .section-title h2{margin:0}.quest-party-card .section-title>strong{font-size:11px;color:#579468;background:#eff8ef;padding:7px 9px;border-radius:999px}
-.party-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
-.party-preview-unit{min-width:0;padding:10px 6px;border-radius:16px;background:#f7f9f7;text-align:center}
-.party-preview-unit .quest-item-visual{width:50px;height:50px;margin:0 auto 7px}
-.party-preview-unit span{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.party-preview-unit b{display:block;font-size:10px;color:#579468;margin-top:3px}
-.monster-party-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.monster-party-summary>div{background:#f7f8fc;border-radius:14px;padding:10px;text-align:center}
-.monster-party-summary span{display:block;font-size:9px;color:var(--muted);font-weight:800}.monster-party-summary b{font-size:14px}
-.monster-party-slots{display:grid;gap:8px;margin-bottom:16px}
-.monster-party-slot{display:grid;grid-template-columns:26px 48px 1fr auto;align-items:center;gap:9px;min-height:62px;padding:8px 10px;border:1px dashed #d7dae6;border-radius:16px;background:#fafbfc}
-.monster-party-slot.is-filled{border-style:solid;background:#fff}
-.monster-party-slot .quest-item-visual{width:48px;height:48px}
-.party-slot-number{display:grid;place-items:center;width:22px;height:22px;border-radius:999px;background:#eef0f7;color:var(--muted);font-size:10px;font-weight:850}
-.party-slot-copy{min-width:0}.party-slot-copy b{display:block;font-size:13px}.party-slot-copy span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
-.party-slot-empty{grid-column:2/5;color:var(--muted);font-size:12px}
-.monster-owned-item{grid-template-columns:52px minmax(0,1fr) auto}
-.quest-item-main small{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
-.monster-recruit-list{display:grid;gap:10px}
-.monster-recruit-card{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:16px;background:#fff}
-.monster-recruit-card .quest-item-visual{width:52px;height:52px}
-@media(max-width:390px){
-  .monster-party-slot{grid-template-columns:22px 42px 1fr auto;gap:7px;padding:8px}
-  .monster-party-slot .quest-item-visual{width:42px;height:42px}
-  .monster-owned-item,.monster-recruit-card{grid-template-columns:44px minmax(0,1fr) auto}
-  .monster-owned-item .quest-item-visual,.monster-recruit-card .quest-item-visual{width:44px;height:44px}
-  .monster-recruit-card .shop-action{font-size:10px;padding:8px 9px}
-}
 
 
 /* v8.4 — receptionist implementation */
@@ -327,3 +296,72 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 
 /* v8.6 — tighter face crop + receptionist selector */
 @media(max-width:360px){.receptionist-control-row{grid-template-columns:1fr}.receptionist-switch-group>span{text-align:center;padding-left:0}}
+
+
+/* v8.7 — Adventure: はじまりの森 */
+.adventure-screen{max-width:560px}
+.adventure-heading{margin-bottom:2px}
+.adventure-area-card{position:relative;overflow:hidden;margin-bottom:14px;border-radius:28px;padding:20px 18px 16px;background:linear-gradient(160deg,#edf8ef 0%,#f7fbf4 46%,#fff9e9 100%);border:1px solid #dfeadd;box-shadow:0 18px 42px rgba(50,83,56,.11)}
+.adventure-area-card:before,.adventure-area-card:after{content:"";position:absolute;border-radius:50%;pointer-events:none;opacity:.45}
+.adventure-area-card:before{width:190px;height:190px;right:-82px;top:65px;background:radial-gradient(circle,#b9dfc0 0 12%,transparent 13% 22%,#cce8d1 23% 29%,transparent 30%)}
+.adventure-area-card:after{width:170px;height:170px;left:-85px;bottom:-55px;background:radial-gradient(circle,#f0d999 0 9%,transparent 10% 19%,#e9d69d 20% 25%,transparent 26%)}
+.adventure-area-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.adventure-area-no{display:block;font-size:9px;font-weight:900;letter-spacing:.15em;color:#4f8a5e;margin-bottom:4px}
+.adventure-area-head h3{font-size:23px;letter-spacing:-.03em;margin:0 0 4px;color:#24442d}
+.adventure-area-head p{font-size:11px;color:#708176;margin:0;line-height:1.5}
+.adventure-area-head>strong{flex:none;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid rgba(119,157,126,.2);font-size:10px;color:#4e7a59}
+.adventure-map{position:relative;z-index:2;height:370px;margin:10px -4px 2px}
+.adventure-route{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 0 rgba(255,255,255,.8))}
+.adventure-route polyline{fill:none;stroke:#c8ad6d;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2.5 3.2;vector-effect:non-scaling-stroke;opacity:.85}
+.adventure-node{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);width:84px;text-align:center;z-index:3}
+.adventure-node-icon{position:relative;margin:0 auto;width:47px;height:47px;border-radius:50%;display:grid;place-items:center;background:#fff;border:2px solid #d9d9ca;box-shadow:0 7px 17px rgba(54,69,48,.13);font-size:20px;font-weight:900;color:#8b907e;transition:transform .2s ease}
+.adventure-node-label{margin-top:5px;display:grid;gap:1px;text-shadow:0 1px 0 rgba(255,255,255,.9)}
+.adventure-node-label b{font-size:10px;color:#536157}.adventure-node-label span{font-size:8px;color:#849086;white-space:nowrap}
+.adventure-node.is-passed .adventure-node-icon{background:#dff1df;border-color:#79b786;color:#347347}
+.adventure-node.is-current .adventure-node-icon{width:55px;height:55px;background:linear-gradient(145deg,#fff7ce,#f0c967);border:3px solid #fff;color:#735a18;box-shadow:0 0 0 3px #e6bd55,0 10px 24px rgba(127,91,19,.24);transform:scale(1.02)}
+.adventure-node.is-current .adventure-node-label b{color:#6b5115;font-size:11px}
+.adventure-node.is-locked{opacity:.55;filter:saturate(.55)}
+.adventure-node.is-cleared .adventure-node-icon{width:58px;height:58px;background:linear-gradient(145deg,#7463e8,#4f55c9);border:3px solid #fff;color:#fff;box-shadow:0 0 0 3px #c8c4ff,0 11px 26px rgba(75,78,175,.25)}
+.adventure-here{position:absolute;left:50%;top:-20px;transform:translateX(-50%);font-style:normal;font-size:8px;font-weight:900;color:#fff;background:#4c7558;padding:4px 7px;border-radius:999px;white-space:nowrap;box-shadow:0 5px 12px rgba(40,76,48,.18)}
+.adventure-location-row{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.9)}
+.adventure-location-row span{font-size:10px;color:#76847a;font-weight:800}.adventure-location-row b{font-size:13px;color:#2e5238}
+.adventure-today-card{padding:17px 18px}.adventure-today-card .section-title h2,.adventure-party-card .section-title h2{margin:0}
+.adventure-today-card .section-title>strong{font-size:14px;color:#5260dc;background:#eef0ff;padding:7px 10px;border-radius:999px}
+.adventure-today-text{font-size:14px;font-weight:750;color:#323d54;margin:14px 0 9px}
+.adventure-power-track{height:8px;border-radius:999px;background:#edf0f6;overflow:hidden}.adventure-power-track span{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#5f6de6,#9b8ff0);transition:width .35s ease}
+.adventure-reception-hint{margin:12px 0 0;padding:11px 12px;border-radius:13px;background:#f7f8ff;color:#626d89;font-size:11px;line-height:1.6}
+.adventure-party-card{padding:17px}.adventure-party-card .section-title>strong{font-size:10px;color:#4c8760;background:#edf8f0;padding:7px 9px;border-radius:999px}
+.adventure-party-preview{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}
+.adventure-party-unit{min-width:0;border:1px solid #e5e8ef;border-radius:17px;background:#fafbfe;padding:9px 5px 8px;text-align:center;color:var(--text)}
+.adventure-party-unit:active{transform:scale(.97)}
+.adventure-unit-visual{width:48px;height:48px;margin:0 auto 6px;border-radius:15px;background:#eef0f6;display:grid;place-items:center;overflow:hidden;font-size:23px}
+.adventure-unit-visual img{width:100%;height:100%;object-fit:cover}
+.adventure-party-unit span{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.adventure-party-unit b{display:block;font-size:9px;color:#5c8a69;margin-top:3px}
+.adventure-party-unit.hero-unit .adventure-unit-visual{background:linear-gradient(145deg,#e9ebff,#f8f8ff);color:#5260dc}.adventure-party-unit.empty-unit{border-style:dashed;color:#9ba2b1}
+.adventure-prep-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}
+.adventure-prep-button{min-width:0;border:1px solid var(--line);border-radius:17px;background:#fff;padding:12px 8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:5px;color:var(--text);box-shadow:0 7px 20px rgba(30,40,67,.05)}
+.adventure-prep-button>span{font-size:18px;color:#5d68d9}.adventure-prep-button b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.adventure-prep-button i{font-style:normal;color:#a2a9b7}
+.adventure-result-card{margin:0 0 13px;padding:15px;border-radius:17px;background:linear-gradient(145deg,#eef8ef,#fff9e8);border:1px solid #dfeadf;text-align:left}
+.adventure-result-card>span{font-size:9px;font-weight:900;letter-spacing:.1em;color:#5b8064}.adventure-result-card h3{font-size:18px;margin:4px 0 6px;color:#2f5137}.adventure-result-card p{font-size:12px;line-height:1.55;color:#657369;margin:0}.adventure-result-card b{display:block;margin-top:8px;padding-top:8px;border-top:1px solid rgba(107,141,111,.18);font-size:11px;color:#8a641d}
+@media(max-width:430px){.adventure-map{height:345px}.adventure-node{width:76px}.adventure-node-label span{font-size:7px}.adventure-prep-row{gap:6px}.adventure-prep-button{padding:11px 6px}.adventure-prep-button b{font-size:9px}}
+@media(max-width:360px){.adventure-party-preview{gap:5px}.adventure-unit-visual{width:43px;height:43px}.adventure-prep-row{grid-template-columns:1fr}.adventure-prep-button{grid-template-columns:28px 1fr auto}.adventure-prep-button b{font-size:11px;text-align:left}}
+
+
+/* v8.8 — training EXP, Lv.1-50 receptionist progression, no companion monsters */
+.adventure-growth-card{overflow:hidden}
+.adventure-growth-hero{display:flex;align-items:center;gap:13px;margin:12px 0 10px}
+.adventure-growth-icon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(145deg,#eef0ff,#f8f9ff);color:var(--blue);font-size:24px;border:1px solid #e3e6f5}
+.adventure-growth-hero>div:last-child{display:grid;gap:3px}.adventure-growth-hero b{font-size:16px}.adventure-growth-hero span{font-size:12px;color:var(--sub);font-weight:700}
+.adventure-xp-track{height:9px;border-radius:999px;background:#eceef6;overflow:hidden}.adventure-xp-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6673ec,#9a74ec);transition:width .35s ease}
+.adventure-growth-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}.adventure-growth-stats>div{padding:11px 8px;border-radius:14px;background:#f7f8fc;text-align:center}.adventure-growth-stats span{display:block;font-size:9px;color:var(--sub);margin-bottom:5px}.adventure-growth-stats b{display:block;font-size:12px;color:var(--ink)}
+.adventure-growth-note{margin:13px 2px 0;color:var(--sub);font-size:11px;line-height:1.6}
+.adventure-prep-row.two{grid-template-columns:1fr 1fr}
+.receptionist-bond-badge{display:inline-flex;margin:0 auto 10px;padding:6px 10px;border-radius:999px;background:#fff7df;color:#8c6a16;border:1px solid #f2df9f;font-size:11px;font-weight:900}
+.receptionist-message{white-space:pre-line}
+.levelup-receptionist{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center;margin:12px 0;padding:12px;border-radius:18px;background:linear-gradient(135deg,#f6f1ff,#fff8ec);border:1px solid #eadff8;text-align:left}
+.levelup-receptionist img{width:76px;height:76px;border-radius:16px;object-fit:cover;object-position:center top;background:#fff}
+.levelup-receptionist span{display:block;font-size:10px;font-weight:900;color:#8b6f3c;letter-spacing:.08em;margin-bottom:4px}.levelup-receptionist p{margin:0;font-size:12px;line-height:1.6;color:#4c5264;font-weight:650}
+.quest-bonus.boss-exp{background:#fff3d8;color:#8d6510;border-color:#efd79d}
+@media(max-width:430px){.adventure-growth-stats{grid-template-columns:1fr 1fr}.levelup-receptionist{grid-template-columns:66px 1fr}.levelup-receptionist img{width:66px;height:66px}}
+
+.adventure-growth-stats small{display:block;margin-top:4px;font-size:8px;color:#9299aa;font-weight:700}

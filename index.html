@@ -14,7 +14,7 @@
   <header class="topbar">
     <div>
       <div class="eyebrow" id="modeLabel">通常日</div>
-      <h1>QuestLife <small class="version">v8.6</small></h1>
+      <h1>QuestLife <small class="version">v8.8</small></h1>
     </div>
     <div class="header-status">
       <div class="streak">連続 <b id="streakCount">0</b>日</div>
@@ -106,42 +106,44 @@
       </div>
     </section>
 
-    <section id="quest" class="tab quest-screen">
-      <div class="page-heading quest-heading"><div><span class="quest-overline">ADVENTURER GUILD</span><h2>クエスト</h2></div><div class="quest-wallet-mini"><span>所持金</span><b id="questGold">0G</b></div></div>
+    <section id="quest" class="tab quest-screen adventure-screen">
+      <div class="page-heading quest-heading adventure-heading">
+        <div><span class="quest-overline">ADVENTURE</span><h2>冒険</h2></div>
+        <div class="quest-wallet-mini"><span>所持金</span><b id="questGold">0G</b></div>
+      </div>
 
-      <button id="openHeroPanel" class="quest-hero-card" type="button" aria-haspopup="dialog" aria-controls="heroDialog">
-        <div class="quest-hero-visual game-visual" id="questHeroVisual" data-game-visual="hero" aria-hidden="true"><span>⚔</span></div>
-        <div class="quest-hero-copy">
-          <span class="quest-card-kicker">ADVENTURER</span>
-          <h3 id="questHeroName">名もなき旅人</h3>
-          <div class="quest-hero-stats"><b id="questHeroLevel">Lv.1</b><span id="questHeroXp">EXP 0/100</span></div>
-          <div class="quest-xp-track quest-page-xp" aria-hidden="true"><span id="questHeroXpBar"></span></div>
+      <div class="adventure-area-card">
+        <div class="adventure-area-head">
+          <div><span id="adventureAreaNo" class="adventure-area-no">AREA 01</span><h3 id="adventureAreaName">はじまりの森</h3><p id="adventureAreaSubtitle">ギルドの外に広がる、最初の遠征地。</p></div>
+          <strong id="adventureStatus">探索 0/6</strong>
         </div>
-        <span class="quest-card-chevron" aria-hidden="true">›</span>
-      </button>
-
-      <div class="quest-hub-grid">
-        <button id="openMonstersPanel" class="quest-hub-card" type="button" aria-haspopup="dialog" aria-controls="monstersDialog">
-          <div class="quest-hub-icon monster-hub-icon" aria-hidden="true">◉</div>
-          <div><span>仲間</span><h3>モンスター</h3><p id="questMonsterSummary">1体</p></div>
-          <b>›</b>
-        </button>
-        <button id="openShopPanel" class="quest-hub-card" type="button" aria-haspopup="dialog" aria-controls="shopDialog">
-          <div class="quest-hub-icon shop-hub-icon" aria-hidden="true">♜</div>
-          <div><span>ギルド</span><h3>ショップ</h3><p id="questShopSummary">0G 所持</p></div>
-          <b>›</b>
-        </button>
+        <div id="adventureMap" class="adventure-map" aria-label="冒険マップ"></div>
+        <div class="adventure-location-row"><span>現在地</span><b id="adventureCurrentLocation">冒険者ギルド</b></div>
       </div>
 
-      <div class="card quest-party-card">
-        <div class="section-title"><div><span class="quest-card-kicker">PARTY</span><h2>パーティ</h2></div><strong id="questPartyPower">総合冒険力 0</strong></div>
-        <div id="questPartyPreview" class="party-preview"></div>
+      <div class="card adventure-today-card">
+        <div class="section-title"><div><span class="quest-card-kicker">TONIGHT</span><h2>今夜の遠征</h2></div><strong id="adventureTodayPower">+0pt</strong></div>
+        <p id="adventureTodayText" class="adventure-today-text">今日の行動で遠征力が変化します。</p>
+        <div class="adventure-power-track" aria-hidden="true"><span id="adventureTodayBar"></span></div>
+        <p id="adventureNextHint" class="adventure-reception-hint">受付嬢「次の地点に何かありそうですよ。」</p>
       </div>
 
-      <div class="card quest-daily-card">
-        <div class="section-title"><div><span class="quest-card-kicker">TODAY</span><h2>今日の冒険</h2></div><strong id="questDailyGrade">進行中</strong></div>
-        <div class="quest-daily-progress"><div><span>クエスト</span><b id="questDailyProgress">0/1</b></div><div><span>獲得予定</span><b id="questDailyReward">+0 EXP / +0G</b></div></div>
-        <div class="guide-progress quest-daily-bar" aria-hidden="true"><span id="questDailyBar"></span></div>
+      <div class="card adventure-growth-card">
+        <div class="section-title"><div><span class="quest-card-kicker">ADVENTURER GROWTH</span><h2>冒険者の成長</h2></div><strong id="adventureHeroLevel">Lv.1</strong></div>
+        <div class="adventure-growth-hero"><div class="adventure-growth-icon">⚔</div><div><b id="adventureHeroTitle">見習い冒険者</b><span id="adventureXpText">0/60 EXP</span></div></div>
+        <div class="adventure-xp-track" aria-hidden="true"><span id="adventureXpBar"></span></div>
+        <div class="adventure-growth-stats">
+          <div><span>筋トレ累計</span><b id="adventureWorkoutCount">0回</b></div>
+          <div><span>連続運動</span><b id="adventureWorkoutStreak">0日</b></div>
+          <div><span>ボス討伐</span><b id="adventureBossWins">0回</b></div>
+          <div class="bond-stat"><span>受付嬢との関係</span><b id="adventureBondStage">新人冒険者</b><small id="adventureNextBond">次の変化 Lv.6</small></div>
+        </div>
+        <p class="adventure-growth-note">筋トレを続けるほどEXPが貯まり、レベルに応じて受付嬢の会話が変化します。</p>
+      </div>
+
+      <div class="adventure-prep-row two" aria-label="冒険準備">
+        <button id="openHeroPanel" class="adventure-prep-button" type="button" aria-haspopup="dialog" aria-controls="heroDialog"><span>⚔</span><b>主人公・装備</b><i>›</i></button>
+        <button id="openShopPanel" class="adventure-prep-button" type="button" aria-haspopup="dialog" aria-controls="shopDialog"><span>♜</span><b>ギルドショップ</b><i>›</i></button>
       </div>
     </section>
 
@@ -226,7 +228,7 @@
   <nav class="bottom-nav" aria-label="メインメニュー">
     <button data-tab="today" class="active"><span>⌂</span>今日</button>
     <button data-tab="workout"><span>◎</span>運動</button>
-    <button data-tab="quest"><span>♢</span>クエスト</button>
+    <button data-tab="quest"><span>♢</span>冒険</button>
     <button data-tab="record"><span>▥</span>記録</button>
     <button data-tab="settings"><span>⚙</span>設定</button>
   </nav>
@@ -291,20 +293,11 @@
     <div class="quest-detail-visual game-visual" id="heroDialogVisual" data-game-visual="hero" aria-hidden="true"><span>⚔</span></div>
     <span class="quest-dialog-kicker">ADVENTURER</span>
     <h2 id="heroDialogName">名もなき旅人</h2>
-    <div class="quest-dialog-stats"><div><span>LEVEL</span><b id="heroDialogLevel">Lv.1</b></div><div><span>EXP</span><b id="heroDialogXp">0/100</b></div><div><span>冒険力</span><b id="heroDialogPower">1</b></div><div><span>GOLD</span><b id="heroDialogGold">0G</b></div></div>
+    <div class="quest-dialog-stats"><div><span>LEVEL</span><b id="heroDialogLevel">Lv.1</b></div><div><span>EXP</span><b id="heroDialogXp">0/60</b></div><div><span>総合力</span><b id="heroDialogPower">1</b></div><div><span>GOLD</span><b id="heroDialogGold">0G</b></div></div>
     <div class="quest-subsection"><div class="section-title"><h3>現在の装備</h3><span id="heroGearPower">装備力 +0</span></div><div id="heroEquipmentSlots" class="gear-slot-list"></div></div>
     <div class="quest-subsection"><div class="section-title"><h3>所持装備</h3><span id="heroOwnedGearCount">0個</span></div><div id="heroEquipmentPreview" class="quest-collection"></div></div>
   </dialog>
 
-  <dialog id="monstersDialog" class="quest-detail-dialog">
-    <button class="dialog-close close-quest-detail" type="button" aria-label="閉じる">×</button>
-    <span class="quest-dialog-kicker">PARTY</span>
-    <h2>仲間モンスター</h2>
-    <div class="monster-party-summary"><div><span>編成</span><b id="monsterPartyCount">1/3</b></div><div><span>仲間力</span><b id="monsterPartyPower">+2</b></div></div>
-    <div id="monsterPartySlots" class="monster-party-slots"></div>
-    <div class="quest-subsection"><div class="section-title"><h3>所持モンスター</h3></div><div id="monsterCollection" class="quest-collection monster-collection"></div></div>
-    <div class="quest-subsection"><div class="section-title"><h3>仲間募集</h3><span>テスト用</span></div><div id="monsterRecruitList" class="monster-recruit-list"></div></div>
-  </dialog>
 
   <dialog id="shopDialog" class="quest-detail-dialog">
     <button class="dialog-close close-quest-detail" type="button" aria-label="閉じる">×</button>
@@ -325,6 +318,7 @@
     <div class="guide-dialog-copy">
       <span class="guide-dialog-kicker">ADVENTURER GUILD · RECEPTION</span>
       <h2 id="receptionistDialogTitle">受付嬢からのご案内</h2>
+      <div id="receptionistBondBadge" class="receptionist-bond-badge">Lv.1 · 新人冒険者</div>
       <p id="guideLongMessage" class="receptionist-message">今日の様子を確認して、次の一歩をご案内します。</p>
       <div class="receptionist-control-row">
         <div class="receptionist-switch-group">
@@ -344,7 +338,7 @@
       </div>
       <div class="quest-wallet">
         <div><span>LEVEL</span><b id="guideLevel">Lv.1</b></div>
-        <div><span>EXP</span><b id="guideXp">0/100</b></div>
+        <div><span>EXP</span><b id="guideXp">0/60</b></div>
         <div><span>GOLD</span><b id="guideGold">0G</b></div>
       </div>
       <div class="quest-xp-track" aria-hidden="true"><span id="guideXpBar"></span></div>
